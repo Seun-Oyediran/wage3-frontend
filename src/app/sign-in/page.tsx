@@ -8,6 +8,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ClipboardEvent,
   type FormEvent,
   type KeyboardEvent,
@@ -417,21 +418,40 @@ function CodeStep({
 }
 
 /**
+ * Whether this page is on its way to Google. Back from the consent screen restores the page from
+ * the bfcache with its state as it was, so a `pageshow` from the cache clears it.
+ */
+let leavingForGoogle = false;
+const leavingListeners = new Set<() => void>();
+const setLeavingForGoogle = (v: boolean) => {
+  leavingForGoogle = v;
+  leavingListeners.forEach((l) => l());
+};
+const subscribeLeaving = (l: () => void) => {
+  leavingListeners.add(l);
+  const onShow = (e: PageTransitionEvent) => {
+    if (e.persisted) setLeavingForGoogle(false);
+  };
+  window.addEventListener("pageshow", onShow);
+  return () => {
+    leavingListeners.delete(l);
+    window.removeEventListener("pageshow", onShow);
+  };
+};
+
+/**
  * Google log-in as the pill at the foot of the page (after Aave Account's). "Last used" shows
- * when Google was this browser's last way in (set on click and again by the callback).
+ * when Google was this browser's last way in (written by the callback once log-in succeeds).
  */
 function GooglePill() {
-  const [last, setLast] = useLocalValue(LAST_SIGN_IN);
-  const [going, setGoing] = useState(false);
+  const [last] = useLocalValue(LAST_SIGN_IN);
+  const going = useSyncExternalStore(subscribeLeaving, () => leavingForGoogle, () => false);
   const lastUsed = last === "google";
   return (
     <button
       type="button"
       onClick={() => {
-        setGoing(true);
-        // Recorded on the way out: Google's return trip lands on whichever frontend the backend
-        // is configured for, so the callback can't be relied on to write it here.
-        setLast("google");
+        setLeavingForGoogle(true);
         window.location.href = authApi.googleStartUrl;
       }}
       disabled={going}
