@@ -110,25 +110,42 @@ export function ErrorState({
 }
 
 /**
- * Empty state for a page's first use: an illustration (a placeholder square until it's drawn),
- * a heading, one line on why, then the main action and a quiet secondary one. Left-aligned in a
- * narrow column, as on History and Lists.
+ * Empty state for a page's first use: an illustration (a placeholder square until one is passed),
+ * a heading, one line on why, then the main action and a quiet secondary one, in a narrow column.
  */
 export function IllustratedEmpty({
+  illustration,
   title,
   description,
   actions,
+  align = "start",
 }: {
+  illustration?: ReactNode;
   title: ReactNode;
-  description: ReactNode;
+  description?: ReactNode;
   actions: ReactNode;
+  /** "center" when it sits over something, like an empty table's ghost rows: centred and compact. */
+  align?: "start" | "center";
 }) {
+  const placeholder = <div aria-hidden className="size-40 rounded-2xl bg-surface-muted" />;
+
+  if (align === "center") {
+    return (
+      <div className="flex flex-col items-center px-6 py-12 text-center">
+        {illustration ?? placeholder}
+        <p className="mt-4 max-w-xs text-14 font-medium text-pretty">{title}</p>
+        {description && <p className="mt-1 max-w-xs text-13 text-fg-muted text-pretty">{description}</p>}
+        <div className="mt-4 flex items-center gap-5">{actions}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center px-6 py-16">
       <div className="flex w-full max-w-sm flex-col items-start">
-        <div aria-hidden className="size-40 rounded-2xl bg-surface-muted" />
+        {illustration ?? placeholder}
         <h2 className="headline mt-8 text-24 font-normal">{title}</h2>
-        <p className="mt-2 text-15 leading-6 text-fg-muted text-pretty">{description}</p>
+        {description && <p className="mt-2 text-14 leading-5 text-fg-muted text-pretty">{description}</p>}
         <div className="mt-6 flex items-center gap-5">{actions}</div>
       </div>
     </div>

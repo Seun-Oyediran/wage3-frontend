@@ -20,10 +20,10 @@ export function FloatingToast({
   ...props
 }: { show: boolean; containerClassName?: string } & HTMLMotionProps<"div">) {
   return (
-    // Centred on the content panel, past the 240px desktop sidebar.
+    // Centred on the page, past the desktop sidebar.
     <div
       className={cn(
-        "pointer-events-none fixed inset-x-0 bottom-0 flex justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pl-60",
+        "pointer-events-none fixed inset-x-0 bottom-0 flex justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:pl-(--sidebar-w)",
         containerClassName,
       )}
     >

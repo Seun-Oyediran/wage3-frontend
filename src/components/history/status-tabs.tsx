@@ -38,7 +38,7 @@ export function StatusTabs({ value, onChange }: { value: SentStatus | undefined;
             className={cn(
               // One weight for every tab, so the sliding underline never changes width mid-slide.
               DISPLAY_TEXT,
-              "relative pb-3 text-15 font-medium whitespace-nowrap transition-colors duration-150",
+              "relative pb-1.5 text-15 font-medium whitespace-nowrap transition-colors duration-150",
               on ? "text-fg" : "text-fg-muted hover:text-fg",
             )}
           >

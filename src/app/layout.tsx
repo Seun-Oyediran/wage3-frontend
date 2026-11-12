@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, Doto, Inter, Roboto_Mono } from "next/font/google"
 
 import { DevTools } from "@/components/providers/dev-tools";
 import { Providers } from "@/components/providers";
+import { SIDEBAR_PREPAINT_SCRIPT } from "@/lib/sidebar";
 
 import "./globals.css";
 
@@ -33,6 +34,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${inter.variable} ${robotoMono.variable} ${doto.variable} ${bricolage.variable} h-full`}
       suppressHydrationWarning
     >
+      <head>
+        {/* Before first paint, so a collapsed sidebar never loads wide (see lib/sidebar.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: SIDEBAR_PREPAINT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
         <DevTools />

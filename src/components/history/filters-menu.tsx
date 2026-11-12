@@ -18,7 +18,6 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { ChevronRightIcon, FiltersIcon } from "@/components/ui/icons";
-import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
 import { PERIODS, periodStart } from "@/lib/utils/periods";
 
@@ -74,23 +73,21 @@ export function FiltersMenu({
 
   return (
     <DropdownMenu>
-      <Tooltip content="Filters">
-        <DropdownTrigger asChild>
-          <Button
-            variant="outline"
-            aria-label={active ? `Filters, ${active} active` : "Filters"}
-            className={cn("h-10 shrink-0 gap-1.5 rounded-full", active > 0 ? "px-3" : "w-10 p-0")}
-          >
-            <FiltersIcon className="size-4" />
-            {active > 0 && (
-              <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-inverse px-1 text-11 font-medium text-inverse-fg tabular">
-                {active}
-              </span>
-            )}
-          </Button>
-        </DropdownTrigger>
-      </Tooltip>
-      <DropdownContent className="w-64">
+      <DropdownTrigger asChild>
+        <Button
+          variant="filled"
+          aria-label={active ? `Filters, ${active} active` : "Filters"}
+          className={cn("h-10 shrink-0 gap-1.5 rounded-full", active > 0 ? "px-3" : "w-10 p-0")}
+        >
+          <FiltersIcon className="size-4" />
+          {active > 0 && (
+            <span className="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary/87 px-1 text-11 font-medium text-primary-fg tabular">
+              {active}
+            </span>
+          )}
+        </Button>
+      </DropdownTrigger>
+      <DropdownContent className="w-56">
         <DropdownLabel
           action={
             active > 0 && (
@@ -105,7 +102,7 @@ export function FiltersMenu({
 
         <DropdownSub>
           <DropdownSubTrigger hint={listName}>List</DropdownSubTrigger>
-          <DropdownSubContent className="max-h-80 w-56 overflow-y-auto">
+          <DropdownSubContent className="max-h-80 w-48 overflow-y-auto">
             <DropdownRadioGroup value={listId} onValueChange={onList}>
               <DropdownRadioItem value="">All lists</DropdownRadioItem>
               {lists.map((l) => (
@@ -121,7 +118,7 @@ export function FiltersMenu({
 
         <DropdownSub>
           <DropdownSubTrigger hint={timeName}>Time</DropdownSubTrigger>
-          <DropdownSubContent className={customOpen ? "w-[266px]" : "w-56"}>
+          <DropdownSubContent className={customOpen ? "w-66" : "w-48"}>
             <DropdownRadioGroup value={time} onValueChange={onTimeValue}>
               <DropdownRadioItem value="all">All time</DropdownRadioItem>
               {TIME_PRESETS.map((p) => (

@@ -136,6 +136,14 @@ export function formatDateTime(iso: string | null | undefined) {
   return formatDate(iso, { hour: "2-digit", minute: "2-digit" });
 }
 
+/** "12 Nov, 13:09" this year, "12 Nov 2025, 13:09" before: for tables, where this year's year is noise. */
+export function formatDateTimeShort(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  const thisYear = d.getFullYear() === new Date().getFullYear();
+  return formatDate(d, { hour: "2-digit", minute: "2-digit", year: thisYear ? undefined : "numeric" });
+}
+
 const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 export function formatRelative(iso: string | null | undefined) {
   if (!iso) return "—";

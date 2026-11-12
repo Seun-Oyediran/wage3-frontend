@@ -9,6 +9,12 @@
 @font-face { font-family: "Monument Grotesk"; src: url("/fonts/MonumentGrotesk-Bold.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
 
 /*
+ * The collapsed desktop sidebar, keyed to <html data-sidebar="collapsed">. A script in
+ * app/layout.tsx sets it before first paint, so collapsed styles apply from the start.
+ */
+@custom-variant collapsed (&:where([data-sidebar="collapsed"] *));
+
+/*
  * Base brand tokens (brand.base.org). Grayscale and white space lead;
  * Base Blue is reserved for the single most important element on screen.
  * Secondary colors only for status, never as heroes. No gradients.
@@ -54,6 +60,8 @@
   --border-strong: var(--color-700);
   /* Translucent rule between page sections and figures: lighter than --border, right on any surface. */
   --hairline: oklch(0 0 0 / 0.08);
+  /* Desktop sidebar width: 0 on pages without one (rules below). Fixed toasts centre past it. */
+  --sidebar-w: 0px;
   --fg: var(--gray-100);
   --fg-muted: var(--gray-60);
   --fg-subtle: var(--color-950);
@@ -198,6 +206,7 @@
   --text-20: 20px;
   --text-22: 22px;
   --text-24: 24px;
+  --text-26: 26px;
   --text-28: 28px;
   --text-32: 32px;
   --text-40: 40px;
@@ -376,3 +385,11 @@
   }
 }
 
+
+/* The app sidebar's width, readable anywhere (fixed toasts centre past it), right from first paint. */
+:root:has([data-app-sidebar]) {
+  --sidebar-w: 15rem;
+}
+:root[data-sidebar="collapsed"]:has([data-app-sidebar]) {
+  --sidebar-w: 3.5rem;
+}

@@ -162,7 +162,7 @@ export function Calendar(props: CalendarProps) {
 /** Quiet footer actions, like the menus' "Reset". */
 export function CalendarFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="-mx-[5px] mt-[5px] flex items-center justify-between border-t border-border px-[15px] pt-2 pb-1.5 text-xs font-medium">
+    <div className="-mx-1 mt-1 flex items-center justify-between border-t border-border px-3 pt-2 pb-1.5 text-12 font-medium">
       {children}
     </div>
   );
@@ -215,7 +215,7 @@ export function DatePicker({
           align="start"
           sideOffset={6}
           className={cn(
-            "z-50 w-[266px] origin-(--radix-popover-content-transform-origin) rounded-[13px] bg-surface p-[5px] shadow-(--shadow-menu)",
+            "z-50 w-66 origin-(--radix-popover-content-transform-origin) rounded-[11px] bg-surface p-1 shadow-(--shadow-menu)",
             "data-[state=open]:animate-menu-in data-[state=closed]:animate-menu-out",
             SMOOTH,
           )}
