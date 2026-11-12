@@ -3,7 +3,7 @@
 import { DropdownMenu as M } from "radix-ui";
 import type { ComponentProps, ReactNode } from "react";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { CheckIcon, ChevronRightIcon } from "@/components/ui/icons";
 
 export const DropdownMenu = M.Root;
@@ -100,7 +100,7 @@ export function DropdownSubTrigger({
     <M.SubTrigger className={cn(ROW, "text-fg data-[state=open]:bg-surface-hover", className)} {...props}>
       {icon && <span className="flex text-current opacity-70 [&_svg]:size-4">{icon}</span>}
       <span className="flex-1 whitespace-nowrap">{children}</span>
-      {hint && <span className="max-w-32 truncate text-[13px] text-fg-subtle">{hint}</span>}
+      {hint && <span className="max-w-32 truncate text-13 text-fg-subtle">{hint}</span>}
       <ChevronRightIcon className="size-4 text-fg-subtle" />
     </M.SubTrigger>
   );

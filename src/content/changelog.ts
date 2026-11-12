@@ -1,4 +1,4 @@
-import { KUROSAWA_SIGNATURE, type SignatureData } from "@/components/changelog/signature";
+import { KUROSAWA_SIGNATURE, type SignatureData } from "./signatures";
 
 /**
  * The public changelog (/changelog), newest first. Each entry is one shipped pull request (or the

@@ -35,6 +35,11 @@ const GROUP: Record<PayoutStatus, { label: string; tone: BadgeTone }> = {
   cancelled: { label: "Done", tone: "neutral" },
 };
 
+/** The grouped name of a payment status, for filters that use the same four groups as the badges. */
+export function groupedStatusLabel(status: PayoutStatus) {
+  return GROUP[status].label;
+}
+
 export function PayoutStatusBadge({ status, grouped }: { status: PayoutStatus; grouped?: boolean }) {
   const s = (grouped ? GROUP : PAYOUT)[status] ?? PAYOUT.draft;
   return <Badge tone={s.tone}>{s.label}</Badge>;

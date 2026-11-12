@@ -52,6 +52,8 @@
   /* Softer edge for controls (inputs, outline buttons, date fields); cards and dividers keep --border. */
   --border-subtle: var(--color-50);
   --border-strong: var(--color-700);
+  /* Translucent rule between page sections and figures: lighter than --border, right on any surface. */
+  --hairline: oklch(0 0 0 / 0.08);
   --fg: var(--gray-100);
   --fg-muted: var(--gray-60);
   --fg-subtle: var(--color-950);
@@ -185,6 +187,21 @@
 }
 
 @theme inline {
+  /* The app's font sizes, named by their px value: `text-13`. Size only; line height and
+     tracking stay with each use. The list is mirrored in lib/utils/cn.ts for tailwind-merge. */
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-17: 17px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-28: 28px;
+  --text-32: 32px;
+  --text-40: 40px;
+
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
@@ -193,6 +210,7 @@
   --color-surface-sunken: var(--surface-sunken);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-hairline: var(--hairline);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-subtle: var(--fg-subtle);

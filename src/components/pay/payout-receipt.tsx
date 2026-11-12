@@ -15,9 +15,9 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { CheckCircleIcon, DownloadIcon, ExternalIcon, SearchIcon } from "@/components/ui/icons";
 import type { Payout, PayoutItem } from "@/lib/api/types";
 import { chain, txUrl, USDC } from "@/lib/config";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { downloadPayoutCsv } from "@/lib/export-payout";
-import { formatAmount, formatDateTime, formatFigure, pluralize, shortAddress } from "@/lib/format";
+import { formatAmount, formatDateTime, formatFigure, pluralize, shortAddress } from "@/lib/utils/format";
 import { DISPLAY_FIGURE } from "@/lib/type";
 
 /** Progress hero for a payout that has started sending. */
@@ -58,7 +58,7 @@ export function PayoutProgress({ payout }: { payout: Payout }) {
           </div>
           {/* Money in the display figure like every other amount; the one big number on the page. */}
           <div className="mt-3 flex items-baseline gap-2">
-            <span className={cn(DISPLAY_FIGURE, "text-[40px]")} title={formatAmount(payout.total_amount, decimals)}>{formatFigure(payout.total_amount, decimals)}</span>
+            <span className={cn(DISPLAY_FIGURE, "text-40")} title={formatAmount(payout.total_amount, decimals)}>{formatFigure(payout.total_amount, decimals)}</span>
             <span className="text-base text-fg-muted">{symbol}</span>
           </div>
           <div className="mt-1 text-sm text-fg-muted">
@@ -73,7 +73,7 @@ export function PayoutProgress({ payout }: { payout: Payout }) {
         {/* Only worth showing with several transactions; for one, the status line above says it all. */}
         {total > 1 && (
           <div className="min-w-48 sm:text-right">
-            <div className="text-[13px] text-fg-muted">
+            <div className="text-13 text-fg-muted">
               {confirmed} of {total} batches confirmed
             </div>
             {/* Functional progress: grows to the confirmed fraction, never decorative. */}
@@ -113,7 +113,7 @@ export function BatchList({ payout }: { payout: Payout }) {
                   href={txUrl(b.tx_hash)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-mono text-[13px] text-fg-muted hover:text-fg"
+                  className="inline-flex items-center gap-1 font-mono text-13 text-fg-muted hover:text-fg"
                 >
                   {shortAddress(b.tx_hash, 6)} <ExternalIcon className="size-3" />
                 </a>
@@ -227,7 +227,7 @@ export function ItemsTable({ payout }: { payout: Payout }) {
                 <td className="px-3 py-3">
                   <Address value={i.wallet_address} showActions="hover" />
                 </td>
-                <td className="px-3 py-3 text-right font-mono text-[13px] tabular">{formatAmount(i.amount, decimals)}</td>
+                <td className="px-3 py-3 text-right font-mono text-13 tabular">{formatAmount(i.amount, decimals)}</td>
                 {showStatus && (
                   <td className="px-5 py-3 text-right">
                     <ItemStatusBadge status={i.status} />

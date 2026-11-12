@@ -4,13 +4,26 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { addressUrl, txUrl } from "@/lib/config";
-import { cn } from "@/lib/cn";
-import { shortAddress } from "@/lib/format";
+import { cn } from "@/lib/utils/cn";
+import { shortAddress } from "@/lib/utils/format";
+import { copyText } from "@/lib/utils/clipboard";
 
 import { CheckIcon, CopyIcon, ExternalIcon } from "./icons";
 import { Tooltip } from "./tooltip";
 
-export function CopyButton({ value, label = "Copy", className }: { value: string; label?: string; className?: string }) {
+/** A small copy icon. The tick and a toast confirm it; a refused clipboard says so instead. */
+export function CopyButton({
+  value,
+  label = "Copy",
+  copiedMessage = "Copied",
+  className,
+}: {
+  value: string;
+  label?: string;
+  /** The toast once copied, e.g. "Address copied". */
+  copiedMessage?: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <Tooltip content={copied ? "Copied" : label}>
@@ -18,13 +31,10 @@ export function CopyButton({ value, label = "Copy", className }: { value: string
         type="button"
         onClick={async (e) => {
           e.stopPropagation();
-          await navigator.clipboard.writeText(value);
-          setCopied(true);
           // One toast id: copying several in a row updates it instead of stacking.
-          toast(label === "Copy hash" ? "Transaction hash copied" : label === "Copy address" ? "Address copied" : "Copied", {
-            id: "copied",
-            duration: 2000,
-          });
+          if (!(await copyText(value))) return toast.error("Couldn't copy that", { id: "copied" });
+          setCopied(true);
+          toast(copiedMessage, { id: "copied", duration: 2000 });
           setTimeout(() => setCopied(false), 1400);
         }}
         className={cn(
@@ -56,7 +66,7 @@ export function Address({
 }) {
   return (
     <span className={cn("inline-flex items-center gap-0.5", className)}>
-      <span className="font-mono text-[13px] tabular text-fg" title={value}>
+      <span className="font-mono text-13 tabular text-fg" title={value}>
         {shortAddress(value, chars)}
       </span>
       {showActions && (
@@ -67,7 +77,11 @@ export function Address({
               "transition-opacity duration-150 focus-within:opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100",
           )}
         >
-          <CopyButton value={value} label={kind === "tx" ? "Copy hash" : "Copy address"} />
+          <CopyButton
+            value={value}
+            label={kind === "tx" ? "Copy hash" : "Copy address"}
+            copiedMessage={kind === "tx" ? "Transaction hash copied" : "Address copied"}
+          />
           <Tooltip content="View on BaseScan">
             <a
               href={kind === "tx" ? txUrl(value) : addressUrl(value)}

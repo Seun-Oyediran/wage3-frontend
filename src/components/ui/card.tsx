@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
@@ -21,11 +21,12 @@ export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElemen
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
-  return <h2 className={cn("text-[16px] font-medium tracking-[-0.01em]", className)} {...props} />;
+  return <h2 className={cn("text-15 font-medium tracking-[-0.006em]", className)} {...props} />;
 }
 
+/** The line under a CardTitle. */
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("mt-1 text-[13px] text-fg-muted text-pretty", className)} {...props} />;
+  return <p className={cn("mt-0.5 text-13 text-fg-muted text-pretty", className)} {...props} />;
 }
 
 export function CardBody({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

@@ -6,26 +6,26 @@ import { toast } from "sonner";
 
 import { CheckIcon, CopyLinkIcon } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/tooltip";
+import { EASE_OUT } from "@/lib/motion";
+import { copyText } from "@/lib/utils/clipboard";
 
 const SWAP = {
   initial: { opacity: 0, filter: "blur(4px)", transform: "scale(0.8)" },
   animate: { opacity: 1, filter: "blur(0px)", transform: "scale(1)" },
   exit: { opacity: 0, filter: "blur(4px)", transform: "scale(0.8)" },
-  transition: { duration: 0.18, ease: [0.23, 1, 0.32, 1] as const },
+  transition: { duration: 0.18, ease: EASE_OUT },
 };
 
 /**
- * Copy-link icon on a changelog entry: copies /changelog#slug. No toast; the icon blurs into a
- * check for a moment instead (announced to screen readers through a live region).
+ * Copies the link to one changelog entry (/changelog#slug). No toast on success: the icon blurs
+ * into a check for a moment instead, announced to screen readers through a live region.
  */
 export function CopyLink({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/changelog#${slug}`);
-    } catch {
+    if (!(await copyText(`${window.location.origin}/changelog#${slug}`))) {
       toast.error("Couldn't copy the link.");
       return;
     }

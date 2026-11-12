@@ -1,6 +1,6 @@
 import { formatUnits, isAddress, parseUnits } from "viem";
 
-import { USDC } from "./config";
+import { USDC } from "@/lib/config";
 
 /**
  * Base units ("1500000") -> display ("1.50"). Uses bigint math throughout:
@@ -122,7 +122,7 @@ export function shortAddress(address: string | null | undefined, chars = 4) {
   return `${address.slice(0, 2 + chars)}…${address.slice(-chars)}`;
 }
 
-export function formatDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptions) {
+export function formatDate(iso: string | Date | null | undefined, opts?: Intl.DateTimeFormatOptions) {
   if (!iso) return "—";
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
@@ -153,6 +153,17 @@ export function toApiDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
+/** The UTC day `n` days back, as an API date. "Last 30 days" is `from: daysAgo(29)`. */
+export function daysAgo(n: number) {
+  return toApiDate(new Date(Date.now() - n * 86_400_000));
+}
+
+/** A count with thousands separators, the same in every browser: 1234 -> "1,234". */
+export function formatCount(n: number) {
+  return n.toLocaleString("en-US");
+}
+
+/** "1 person", "1,234 people". */
 export function pluralize(n: number, one: string, many = `${one}s`) {
-  return `${n.toLocaleString("en-US")} ${n === 1 ? one : many}`;
+  return `${formatCount(n)} ${n === 1 ? one : many}`;
 }

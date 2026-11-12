@@ -1,22 +1,17 @@
 "use client";
 
-
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ComponentType, type FormEvent } from "react";
-import { useConfig, useConnection } from "wagmi";
-import { getConnection } from "wagmi/actions";
+import { useEffect, useState, type ComponentType, type FormEvent } from "react";
 
-import { ChevronRightIcon, ExternalIcon, HashIcon, HistoryIcon, HomeIcon, ListIcon, PaymentIcon, PlusIcon, SearchIcon, SettingsIcon } from "@/components/ui/icons";
+import { ChevronRightIcon, ExternalIcon, HashIcon, HistoryIcon, HomeIcon, ListIcon, PaymentIcon, SettingsIcon } from "@/components/ui/icons";
 import { Logo } from "@/components/ui/logo";
-import { Button } from "@/components/ui/button";
-import { WalletWalkthrough } from "@/components/onboarding/wallet-walkthrough";
-import { ConnectDialog } from "@/components/wallet/connect-dialog";
+import { SearchField } from "@/components/ui/search-field";
 import { WalletButton } from "@/components/wallet/wallet-button";
 import { addressUrl, BATCHER_ADDRESS } from "@/lib/config";
-import { cn } from "@/lib/cn";
-import { useLocalValue } from "@/lib/local-prefs";
+import { cn } from "@/lib/utils/cn";
+import { EASE_OUT } from "@/lib/motion";
 
 import { UserCard } from "./user-menu";
 
@@ -71,7 +66,7 @@ export function AppSidebar() {
         {SECTIONS.map((section, i) => (
           <div key={section.title ?? i} className="flex flex-col gap-0.5">
             {section.title && (
-              <div className="px-3 pb-1.5 text-[13px] text-fg-subtle">
+              <div className="px-3 pb-1.5 text-13 text-fg-subtle">
                 {section.title}
               </div>
             )}
@@ -178,7 +173,7 @@ function Breadcrumb({ pathname }: { pathname: string }) {
             initial={{ opacity: 0, filter: "blur(4px)", transform: "translateY(4px)" }}
             animate={{ opacity: 1, filter: "blur(0px)", transform: "translateY(0px)" }}
             exit={{ opacity: 0, filter: "blur(4px)", transform: "translateY(-2px)", transition: { duration: 0.12 } }}
-            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 0.22, ease: EASE_OUT }}
             className="pointer-events-auto flex max-w-[min(420px,40vw)] items-center gap-1.5 text-sm"
           >
             {parent && (
@@ -236,16 +231,9 @@ export function AppTopbar() {
         <form
           onSubmit={submit}
           role="search"
-          className={cn("relative hidden w-full max-w-[269px]", !pathname.startsWith("/history") && "sm:block")}
+          className={cn("hidden w-full max-w-[269px]", !pathname.startsWith("/history") && "sm:block")}
         >
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-fg-subtle" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search payments"
-            aria-label="Search payments"
-            className="h-10 w-full rounded-full bg-surface-muted pr-4 pl-10 text-sm outline-none transition-[background-color,box-shadow] duration-150 placeholder:text-fg-subtle focus:bg-surface focus:shadow-[0_0_0_2px_var(--primary)]"
-          />
+          <SearchField value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search payments" aria-label="Search payments" />
         </form>
 
         <div className="ml-auto flex items-center gap-2">
@@ -270,78 +258,5 @@ export function AppTopbar() {
         ))}
       </nav>
     </header>
-  );
-}
-
-/**
- * "New payment" on the home page. The first time, it opens a short walkthrough (get a wallet,
- * fund it, how paying works). Then, with no wallet connected, it opens the wallet picker and
- * carries on to /pay/new once the wallet connects. Closing the picker without connecting drops
- * the intent, so a later connect doesn't jump pages unexpectedly.
- */
-export function NewPaymentButton({ className }: { className?: string }) {
-  const { isConnected } = useConnection();
-  const config = useConfig();
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [onboarded, setOnboarded] = useLocalValue("wage3.onboarded");
-  const heading = useRef(false);
-
-  useEffect(() => {
-    if (heading.current && isConnected) {
-      heading.current = false;
-      router.push("/pay/new");
-    }
-  }, [isConnected, router]);
-
-  // After the walkthrough (finished or skipped): remember it, then carry on as a normal click.
-  const proceed = () => {
-    setOnboarded("1");
-    setGuideOpen(false);
-    if (getConnection(config).isConnected) return router.push("/pay/new");
-    heading.current = true;
-    setOpen(true);
-  };
-
-  if (isConnected && onboarded) {
-    return (
-      <Button asChild size="sm" className={className}>
-        <Link href="/pay/new">
-          <PlusIcon className="size-4" /> New payment
-        </Link>
-      </Button>
-    );
-  }
-
-  return (
-    <>
-      <Button
-        size="sm"
-        className={className}
-        onClick={() => {
-          if (!onboarded) return setGuideOpen(true);
-          heading.current = true;
-          setOpen(true);
-        }}
-      >
-        <PlusIcon className="size-4" /> New payment
-      </Button>
-      <WalletWalkthrough
-        open={guideOpen}
-        onOpenChange={setGuideOpen}
-        onDone={proceed}
-        // One label either way; without a wallet it opens the wallet picker next.
-        doneLabel="Get started"
-      />
-      <ConnectDialog
-        open={open}
-        onOpenChange={(o) => {
-          setOpen(o);
-          // Read the store directly: this render's isConnected can lag the connect that just closed us.
-          if (!o && !getConnection(config).isConnected) heading.current = false;
-        }}
-      />
-    </>
   );
 }

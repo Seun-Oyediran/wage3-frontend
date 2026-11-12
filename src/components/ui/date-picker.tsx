@@ -4,7 +4,7 @@ import { Popover as P } from "radix-ui";
 import { useState, type KeyboardEvent } from "react";
 
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 /** Values are "YYYY-MM-DD", the format the history filters and the backend use. */
 export type Ymd = string;
@@ -92,7 +92,7 @@ export function Calendar(props: CalendarProps) {
     <div onKeyDown={onKeyDown}>
       {/* Month + arrows */}
       <div className="flex items-center justify-between px-2.5 pt-2 pb-1">
-        <span className="text-[13px] font-medium">
+        <span className="text-13 font-medium">
           {new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric" }).format(new Date(y, m, 1))}
         </span>
         <span className="flex gap-0.5">
@@ -122,7 +122,7 @@ export function Calendar(props: CalendarProps) {
       {/* Weekdays + days */}
       <div role="grid" className="grid grid-cols-7 gap-0.5 px-[3px] pb-1">
         {WEEKDAYS.map((w, i) => (
-          <span key={i} className="grid h-7 place-items-center text-[11px] font-medium text-fg-subtle">
+          <span key={i} className="grid h-7 place-items-center text-11 font-medium text-fg-subtle">
             {w}
           </span>
         ))}
@@ -141,7 +141,7 @@ export function Calendar(props: CalendarProps) {
               aria-label={formatYmd(c.ymd)}
               onClick={() => pick(c.ymd)}
               className={cn(
-                "relative grid h-8 place-items-center rounded-[8px] text-[13px] tabular outline-none",
+                "relative grid h-8 place-items-center rounded-[8px] text-13 tabular outline-none",
                 "transition-colors duration-100 focus-visible:shadow-[inset_0_0_0_1.5px_var(--primary)]",
                 selected ? "bg-(--color-200) font-medium text-fg" : between ? "bg-(--color-400)" : "hover:bg-surface-hover",
                 !c.inMonth && !selected && !between && "text-fg-subtle",
@@ -200,7 +200,7 @@ export function DatePicker({
         aria-label={ariaLabel}
         aria-invalid={invalid || undefined}
         className={cn(
-          "relative flex h-10 items-center rounded-xl border border-border-subtle bg-surface pr-3.5 pl-9 text-[13px] tabular outline-none",
+          "relative flex h-10 items-center rounded-xl border border-border-subtle bg-surface pr-3.5 pl-9 text-13 tabular outline-none",
           "transition-[border-color] duration-150 hover:border-border focus-visible:border-primary data-[state=open]:border-primary",
           "aria-invalid:border-danger",
           value ? "text-fg" : "text-fg-subtle",

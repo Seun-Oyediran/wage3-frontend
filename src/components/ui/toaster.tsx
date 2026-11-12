@@ -2,7 +2,7 @@
 
 import { Toaster as Sonner } from "sonner";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 import { toastTone } from "./toast-tone";
 
@@ -31,13 +31,13 @@ export function Toaster() {
               "flex min-h-13 w-full items-center gap-3 rounded-[18px] px-4 py-2 font-sans has-[[data-button]]:pr-2 [corner-shape:superellipse(1.5)] [&_[data-icon]]:hidden",
               toastTone.surface,
             ),
-          title: "text-[15px] font-medium leading-5",
-          description: cn("mt-0.5 text-[13px]", toastTone.muted),
+          title: "text-15 font-medium leading-5",
+          description: cn("mt-0.5 text-13", toastTone.muted),
           content: "min-w-0 flex-1",
           actionButton:
-            cn("pressable h-9 shrink-0 rounded-[10px] px-2.5 text-[14px] font-semibold whitespace-nowrap", toastTone.action),
+            cn("pressable h-9 shrink-0 rounded-[10px] px-2.5 text-14 font-semibold whitespace-nowrap", toastTone.action),
           cancelButton:
-            cn("pressable h-9 shrink-0 rounded-[10px] px-2.5 text-[14px] font-medium whitespace-nowrap", toastTone.muted, toastTone.action),
+            cn("pressable h-9 shrink-0 rounded-[10px] px-2.5 text-14 font-medium whitespace-nowrap", toastTone.muted, toastTone.action),
           error: toastTone.errorSurface,
         },
       }}
