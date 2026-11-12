@@ -5,14 +5,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Drawer } from "@/components/ui/drawer";
 import { ExternalIcon, MailIcon } from "@/components/ui/icons";
+import { NetworkBadge } from "@/components/ui/network-badge";
 import { Input } from "@/components/ui/input";
 import { LogoPreview } from "@/components/ui/logo-field";
 import { ItemStatusBadge } from "@/components/ui/status-badge";
 import { Address } from "@/components/ui/address";
 import type { Payout, PayoutItem } from "@/lib/api/types";
 import { chain, txUrl, USDC } from "@/lib/config";
-import { cn } from "@/lib/cn";
-import { formatAmount, formatDateTime, formatFigure } from "@/lib/format";
+import { cn } from "@/lib/utils/cn";
+import { formatAmount, formatDateTime, formatFigure } from "@/lib/utils/format";
 import { useCompany } from "@/lib/local-prefs";
 import { DISPLAY_FIGURE } from "@/lib/type";
 
@@ -124,45 +125,42 @@ export function RecipientReceipt({
           {/* The amount first: the one number this is about. */}
           <div className="rounded-2xl bg-(--color-25) p-5 shadow-(--shadow-xs)">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-[13px] text-fg-muted">Amount paid</span>
+              <span className="text-13 text-fg-muted">Amount paid</span>
               <ItemStatusBadge status={item.status} />
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className={cn(DISPLAY_FIGURE, "text-[32px]")} title={formatAmount(item.amount, decimals)}>{formatFigure(item.amount, decimals)}</span>
+              <span className={cn(DISPLAY_FIGURE, "text-32")} title={formatAmount(item.amount, decimals)}>{formatFigure(item.amount, decimals)}</span>
               <span className="text-base text-fg-muted">{symbol}</span>
             </div>
           </div>
 
           <section>
-            <h3 className="text-[13px] text-fg-subtle">From</h3>
+            <h3 className="text-13 text-fg-subtle">From</h3>
             <div className="mt-2 flex items-center gap-3">
               {company.logo && <LogoPreview src={company.logo} className="size-9" />}
               <div className="min-w-0">
                 <div className="truncate text-sm font-medium">{company.name || "Your wallet"}</div>
-                {company.email && <div className="truncate text-[13px] text-fg-muted">{company.email}</div>}
+                {company.email && <div className="truncate text-13 text-fg-muted">{company.email}</div>}
                 {payout.sender_address && <Address value={payout.sender_address} className="mt-0.5" />}
               </div>
             </div>
           </section>
 
           <section>
-            <h3 className="text-[13px] text-fg-subtle">To</h3>
+            <h3 className="text-13 text-fg-subtle">To</h3>
             <div className="mt-2 min-w-0">
               <div className="truncate text-sm font-medium">{item.name || "No name"}</div>
-              {item.email && <div className="truncate text-[13px] text-fg-muted">{item.email}</div>}
+              {item.email && <div className="truncate text-13 text-fg-muted">{item.email}</div>}
               <Address value={item.wallet_address} className="mt-0.5" />
             </div>
           </section>
 
           <SendReceipt key={item.id} payout={payout} item={item} company={company.name} />
 
-          <dl className="divide-y divide-[oklch(0_0_0/0.08)] border-t border-[oklch(0_0_0/0.08)] text-[13px]">
+          <dl className="divide-y divide-hairline border-t border-hairline text-13">
             <Row label="Date">{formatDateTime(item.paid_at ?? payout.created_at)}</Row>
             <Row label="Network">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="size-2.5 rounded-[3px] bg-base-blue" />
-                {chain.name}
-              </span>
+              <NetworkBadge />
             </Row>
             <Row label="Transaction">
               {item.tx_hash ? <Address value={item.tx_hash} kind="tx" /> : <span className="font-normal text-fg-subtle">Not sent</span>}

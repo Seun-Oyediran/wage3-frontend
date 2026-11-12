@@ -2,7 +2,8 @@ import Papa from "papaparse";
 
 import type { PayoutItem, PayoutItemInput, Recipient, RecipientInput } from "@/lib/api/types";
 
-import { cleanWallet, parseAmount, toInputAmount, validateEmail, validateWallet } from "./format";
+import { USDC } from "./config";
+import { cleanWallet, parseAmount, toInputAmount, validateEmail, validateWallet } from "@/lib/utils/format";
 
 /** One editable row. `amount` is what the user typed (display units), not base units. */
 export type RecipientRow = {
@@ -87,6 +88,23 @@ const optEmail = (s: string) => (opt(s) && !validateEmail(s) ? s.trim() : null);
 
 /** A typed email that isn't one. A warning only: emails are optional. */
 export const emailWarning = (r: RecipientRow) => (r.email.trim() ? (validateEmail(r.email) ?? undefined) : undefined);
+
+/** A wallet that's valid but probably a mistake in a payment. A warning only; it never blocks. */
+export function walletWarning(r: RecipientRow, { duplicate, ownWallet }: { duplicate: boolean; ownWallet?: string }) {
+  if (duplicate) return "Paid twice in this payment";
+  if (ownWallet && r.wallet.trim().toLowerCase() === ownWallet) return "This is your connected wallet";
+  return undefined;
+}
+
+// One cent in base units. Splits round down to it, so nobody gets a fraction of a cent.
+const CENT = BigInt(10) ** BigInt(USDC.decimals - 2);
+
+/** `total` (base units) split evenly between `count`, rounded down to the cent; `leftover` is what's unassigned. */
+export function splitEvenly(total: bigint, count: number) {
+  const n = BigInt(count);
+  const each = (total / n / CENT) * CENT;
+  return { each, leftover: total - each * n };
+}
 
 export function rowsToRecipientInputs(rows: RecipientRow[]): RecipientInput[] {
   return rows.filter((r) => !isBlankRow(r)).map((r) => {
@@ -202,3 +220,47 @@ export function parseRecipientsText(text: string): ImportResult {
 }
 
 export const CSV_TEMPLATE = "name,email,wallet,amount\nAda Lovelace,ada@example.com,0x1111111111111111111111111111111111111111,250\n";
+
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+
+/** A parsed import, with the file it came from (none for pasted text). */
+export type ParsedImport = ImportResult & { fileName?: string };
+
+/** Reads and parses a CSV/TSV/text file of recipients. Never rejects: problems come back as `error`. */
+export function readRecipientsFile(file: File): Promise<ParsedImport> {
+  const failed = (error: string): ParsedImport => ({ rows: [], skipped: 0, error, fileName: file.name });
+  if (file.size > MAX_FILE_BYTES) return Promise.resolve(failed("That file is over 2 MB. Is it the right one?"));
+  return file
+    .text()
+    .then((text) => ({ ...parseRecipientsText(text), fileName: file.name }))
+    .catch(() => failed("We couldn't read that file."));
+}
+
+/** Why an imported row might not be wanted. `block` rows start unticked. `wallet`: the wallet itself is bad. */
+export type ImportIssue = { label: string; block: boolean; wallet?: boolean };
+
+/**
+ * What's wrong with each imported row, if anything, one issue per row. A bad wallet wins, since
+ * "Repeated in this file" on junk would hide what to fix. Repeats block in a list (the backend
+ * rejects them) but only warn in a payment.
+ */
+export function importIssues(rows: RecipientRow[], mode: EditorMode, existingWallets: Set<string>) {
+  const issues = new Map<string, ImportIssue>();
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const w = r.wallet.trim().toLowerCase();
+    const errors = validateRow(r, mode);
+    const first = errors.wallet ?? errors.amount ?? errors.email ?? errors.name;
+    if (errors.wallet && w) {
+      issues.set(r.key, { label: errors.wallet, block: false, wallet: true });
+    } else if (w && existingWallets.has(w)) {
+      issues.set(r.key, { label: mode === "list" ? "Already in this list" : "Already in this payment", block: mode === "list" });
+    } else if (w && seen.has(w)) {
+      issues.set(r.key, { label: "Repeated in this file", block: mode === "list" });
+    } else if (first) {
+      issues.set(r.key, { label: first, block: false });
+    }
+    if (w) seen.add(w);
+  }
+  return issues;
+}

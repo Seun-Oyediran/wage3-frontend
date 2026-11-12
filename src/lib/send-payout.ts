@@ -18,9 +18,9 @@ import { toApiError } from "@/lib/api/client";
 import { payoutsApi } from "@/lib/api/endpoints";
 import { qk } from "@/lib/api/queries";
 import type { Payout, PayoutBatch } from "@/lib/api/types";
-import { BATCHER_ADDRESS, chain, USDC } from "@/lib/config";
+import { BATCHER_ADDRESS, chain, LIMITS, USDC } from "@/lib/config";
 import { erc20Abi, payBatcherAbi } from "@/lib/contracts";
-import { formatToken } from "@/lib/format";
+import { formatToken } from "@/lib/utils/format";
 
 /**
  * The send flow, step by step:
@@ -58,6 +58,11 @@ const sendStatesAtom = atom<Record<string, SendState>>({});
 export function useSendState(payoutId: string) {
   const all = useAtomValue(sendStatesAtom);
   return all[payoutId] ?? initial;
+}
+
+/** Transactions needed to pay `people` recipients (at least one, so an empty draft still reads as one). */
+export function batchCount(people: number) {
+  return Math.max(1, Math.ceil(people / LIMITS.batchSize));
 }
 
 export const NO_GAS_MESSAGE = `This wallet has no ETH on ${chain.name} for network fees. Add a little ETH to it, then send.`;

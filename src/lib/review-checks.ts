@@ -7,7 +7,7 @@ import { usePayout, useSentHistory } from "@/lib/api/queries";
 import type { Payout } from "@/lib/api/types";
 
 import { USDC } from "./config";
-import { formatAmount, formatRelative, parseAmount, shortAddress } from "./format";
+import { formatAmount, formatRelative, parseAmount, shortAddress } from "@/lib/utils/format";
 import { isBlankRow, type RecipientRow } from "./recipients";
 
 /** Sent money can't be pulled back, so these flags are shown before anyone signs. */

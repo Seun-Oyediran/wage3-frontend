@@ -7,7 +7,7 @@ import { useConnect, useConnectors } from "wagmi";
 import { Dialog } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { ChevronRightIcon, WalletIcon } from "@/components/ui/icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 function friendlyConnectError(message: string) {
   if (/reject|denied|cancel/i.test(message)) return "You closed the wallet prompt. Try again when you're ready.";
@@ -67,8 +67,8 @@ export function ConnectDialog({ open, onOpenChange }: { open: boolean; onOpenCha
                   )}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-medium">{isBase ? "Base Account" : c.name}</span>
-                  <span className="block text-[13px] text-fg-subtle">
+                  <span className="block text-15 font-medium">{isBase ? "Base Account" : c.name}</span>
+                  <span className="block text-13 text-fg-subtle">
                     {isBase ? "Sign in with a passkey. No extension needed." : "Browser wallet"}
                   </span>
                 </span>
@@ -79,7 +79,7 @@ export function ConnectDialog({ open, onOpenChange }: { open: boolean; onOpenCha
         })}
       </ul>
       {error && (
-        <p role="alert" className="mt-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-[13px] text-danger-fg">
+        <p role="alert" className="mt-4 rounded-xl bg-danger-soft px-3.5 py-2.5 text-13 text-danger-fg">
           {friendlyConnectError(error.message)}
         </p>
       )}

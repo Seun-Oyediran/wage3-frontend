@@ -4,7 +4,8 @@ import { Dialog as D } from "radix-ui";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
+import { EASE_OUT } from "@/lib/motion";
 
 import { Button } from "./button";
 import { CloseIcon } from "./icons";
@@ -68,18 +69,18 @@ export function Dialog({
                   animate={{
                     opacity: 1,
                     transform: "translateY(0px) scale(1)",
-                    transition: { duration: 0.24, ease: [0.23, 1, 0.32, 1] },
+                    transition: { duration: 0.24, ease: EASE_OUT },
                   }}
                   exit={{
                     opacity: 0,
                     transform: "translateY(8px) scale(0.98)",
-                    transition: { duration: 0.15, ease: [0.23, 1, 0.32, 1] },
+                    transition: { duration: 0.15, ease: EASE_OUT },
                   }}
                 >
                   {media && <div className="shrink-0">{media}</div>}
                   <div className={cn("flex items-start justify-between gap-4 px-6", media ? "pt-5" : "pt-6")}>
                     <div className="min-w-0 flex-1">
-                      <D.Title className="headline text-[20px] leading-7 font-normal text-balance">
+                      <D.Title className="headline text-20 leading-7 font-normal text-balance">
                         {title}
                       </D.Title>
                       {description ? (

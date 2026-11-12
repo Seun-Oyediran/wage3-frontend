@@ -2,23 +2,20 @@
 
 import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { PeopleIcon, RepeatIcon } from "@/components/ui/icons";
-import { LogoPreview } from "@/components/ui/logo-field";
 import type { ListSummary } from "@/lib/api/types";
-import { cn } from "@/lib/cn";
-import { formatRelative } from "@/lib/format";
-import { useListLogo } from "@/lib/local-prefs";
+import { cn } from "@/lib/utils/cn";
+import { formatCount, formatRelative } from "@/lib/utils/format";
 import { DISPLAY_FIGURE } from "@/lib/type";
 
+import { ListAvatar } from "./list-avatar";
+import { PayAgainButton } from "./pay-again-button";
+
 /**
- * A saved list, the same card on the dashboard and the Lists page: name, when it changed,
- * how many people, and Pay again (what you mostly do with a list). The whole card opens it.
+ * A saved list as a card, on the dashboard: name, when it changed, how many people, and Pay
+ * again (what you mostly do with a list). The whole card opens it.
  */
 export function ListCard({ list }: { list: ListSummary }) {
-  const empty = list.recipient_count === 0;
-  const [logo] = useListLogo(list.id);
   return (
     <Card className="group relative flex h-full flex-col p-5 transition-shadow duration-150 hover:shadow-md">
       <Link
@@ -27,33 +24,18 @@ export function ListCard({ list }: { list: ListSummary }) {
         aria-label={`Open ${list.name}`}
       />
       <div className="flex items-center gap-3">
-        {logo ? (
-          <LogoPreview src={logo} className="size-10" />
-        ) : (
-          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-surface-muted text-fg-muted">
-            <PeopleIcon className="size-4.5" />
-          </span>
-        )}
+        <ListAvatar listId={list.id} />
         <span className="min-w-0">
-          <span className="block truncate text-[15px] font-medium">{list.name}</span>
-          <span className="block text-[13px] text-fg-subtle">Updated {formatRelative(list.updated_at)}</span>
+          <span className="block truncate text-15 font-medium">{list.name}</span>
+          <span className="block text-13 text-fg-subtle">Updated {formatRelative(list.updated_at)}</span>
         </span>
       </div>
       <div className="mt-6 flex items-end justify-between gap-3">
         <div>
-          <div className="text-[13px] text-fg-muted">People</div>
-          <div className={cn(DISPLAY_FIGURE, "mt-1 text-[22px]")}>{list.recipient_count.toLocaleString("en-US")}</div>
+          <div className="text-13 text-fg-muted">People</div>
+          <div className={cn(DISPLAY_FIGURE, "mt-1 text-22")}>{formatCount(list.recipient_count)}</div>
         </div>
-        {/* An empty list can't be paid: say so instead of showing a dead button. */}
-        {empty ? (
-          <span className="text-[13px] text-fg-subtle">No one yet</span>
-        ) : (
-          <Button asChild size="sm" variant="secondary" className="relative">
-            <Link href={`/pay/new?list=${list.id}`}>
-              <RepeatIcon className="size-3.5" /> Pay again
-            </Link>
-          </Button>
-        )}
+        <PayAgainButton list={list} />
       </div>
     </Card>
   );

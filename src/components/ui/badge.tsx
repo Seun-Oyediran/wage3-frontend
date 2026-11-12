@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 const tones = {
   neutral: "bg-surface-muted text-fg-muted",

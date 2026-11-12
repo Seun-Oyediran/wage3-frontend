@@ -20,7 +20,7 @@ export function Avatar({ name, email, src, className = "size-8" }: { name?: stri
     // eslint-disable-next-line @next/next/no-img-element
     <img src={src} alt="" referrerPolicy="no-referrer" className={`${className} rounded-full object-cover`} />
   ) : (
-    <span className={`${className} grid place-items-center rounded-full bg-inverse text-[13px] font-semibold text-inverse-fg`}>
+    <span className={`${className} grid place-items-center rounded-full bg-inverse text-13 font-semibold text-inverse-fg`}>
       {initial}
     </span>
   );

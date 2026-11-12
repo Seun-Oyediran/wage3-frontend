@@ -2,7 +2,7 @@
 
 import { LogOut } from "lucide-react";
 import { useState } from "react";
-import { useConnection, useDisconnect, useReadContract, useSwitchChain } from "wagmi";
+import { useConnection, useDisconnect, useSwitchChain } from "wagmi";
 
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/address";
@@ -15,25 +15,14 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { useHydrated } from "@/lib/auth/use-session";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { chain, USDC } from "@/lib/config";
-import { erc20Abi } from "@/lib/contracts";
-import { formatAmount, shortAddress } from "@/lib/format";
+import { useUsdcBalance } from "@/hooks/use-usdc-balance";
+import { formatAmount, shortAddress } from "@/lib/utils/format";
 
 import { ConnectDialog } from "./connect-dialog";
 import { WarningIcon } from "@/components/ui/icons";
-
-export function useUsdcBalance() {
-  const { address } = useConnection();
-  return useReadContract({
-    address: USDC.address,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: chain.id,
-    query: { enabled: !!address, refetchInterval: 15_000 },
-  });
-}
+import { NetworkBadge } from "@/components/ui/network-badge";
 
 // `filled` (top bar): borderless grey fill to match the search field, and no icon on
 // "Connect wallet" so it reads as a quiet secondary action.
@@ -89,7 +78,7 @@ export function WalletButton({
       <DropdownTrigger asChild>
         <Button variant="outline" size={size} className={cn("gap-2 pl-1.5", filled && FILLED, className)}>
           <WalletAvatar address={address} className="size-6" />
-          <span className="text-[13px] tabular">{shortAddress(address)}</span>
+          <span className="text-13 tabular">{shortAddress(address)}</span>
         </Button>
       </DropdownTrigger>
       {/* After Aave's wallet menu: the wallet as a row you're "in", account facts as label/value rows, then Disconnect. */}
@@ -98,7 +87,7 @@ export function WalletButton({
         <div className="flex h-[34px] items-center gap-2.5 px-2.5">
           <WalletAvatar address={address} className="size-5" />
           <span className="flex-1 text-sm tabular">{shortAddress(address)}</span>
-          <CopyButton value={address} label="Copy address" className="-mr-1" />
+          <CopyButton value={address} label="Copy address" copiedMessage="Address copied" className="-mr-1" />
         </div>
         <DropdownSeparator />
         <dl className="flex flex-col text-sm">
@@ -111,9 +100,8 @@ export function WalletButton({
           </div>
           <div className="flex h-[34px] items-center justify-between gap-3 px-2.5">
             <dt className="text-fg-muted">Network</dt>
-            <dd className="inline-flex items-center gap-1.5">
-              <span className="size-2.5 rounded-[3px] bg-base-blue" />
-              {chain.name}
+            <dd>
+              <NetworkBadge />
             </dd>
           </div>
         </dl>

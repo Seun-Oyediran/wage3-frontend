@@ -4,11 +4,12 @@ import { motion } from "motion/react";
 import { RotateCw, WifiOff } from "lucide-react";
 import type { ReactNode } from "react";
 
+import { WarningIcon } from "@/components/ui/icons";
 import { toApiError } from "@/lib/api/client";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
+import { riseIn } from "@/lib/motion";
 
 import { Button } from "./button";
-import { WarningIcon } from "@/components/ui/icons";
 
 export function EmptyState({
   icon,
@@ -24,11 +25,7 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, transform: "translateY(6px)" }}
-      animate={{ opacity: 1, transform: "translateY(0px)" }}
-      className={cn("flex flex-col items-center px-6 py-14 text-center", className)}
-    >
+    <motion.div {...riseIn()} className={cn("flex flex-col items-center px-6 py-14 text-center", className)}>
       {icon && (
         <div className="mb-5 grid size-12 place-items-center rounded-2xl bg-surface-muted text-fg-muted [&_svg]:size-5">
           {icon}
@@ -49,6 +46,7 @@ export function ErrorState({
   onRetry,
   retrying,
   title,
+  action,
   className,
   compact,
 }: {
@@ -56,6 +54,8 @@ export function ErrorState({
   onRetry?: () => void;
   retrying?: boolean;
   title?: string;
+  /** A way out beside Try again (e.g. "Start from scratch"). Full size only. */
+  action?: ReactNode;
   className?: string;
   compact?: boolean;
 }) {
@@ -95,10 +95,15 @@ export function ErrorState({
         {title ?? (e.isNetwork ? "You're offline" : e.isNotFound ? "Not found" : "Couldn't load this")}
       </h3>
       <p className="mt-1.5 max-w-sm text-sm text-fg-muted text-pretty">{e.message}</p>
-      {onRetry && (
-        <Button variant="outline" size="sm" className="mt-6" onClick={onRetry} loading={retrying}>
-          <RotateCw className="size-3.5" /> Try again
-        </Button>
+      {(onRetry || action) && (
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          {onRetry && (
+            <Button variant="outline" size="sm" onClick={onRetry} loading={retrying}>
+              <RotateCw className="size-3.5" /> Try again
+            </Button>
+          )}
+          {action}
+        </div>
       )}
     </div>
   );
@@ -122,8 +127,8 @@ export function IllustratedEmpty({
     <div className="flex flex-col items-center px-6 py-16">
       <div className="flex w-full max-w-sm flex-col items-start">
         <div aria-hidden className="size-40 rounded-2xl bg-surface-muted" />
-        <h2 className="headline mt-8 text-[24px] font-normal">{title}</h2>
-        <p className="mt-2 text-[15px] leading-6 text-fg-muted text-pretty">{description}</p>
+        <h2 className="headline mt-8 text-24 font-normal">{title}</h2>
+        <p className="mt-2 text-15 leading-6 text-fg-muted text-pretty">{description}</p>
         <div className="mt-6 flex items-center gap-5">{actions}</div>
       </div>
     </div>

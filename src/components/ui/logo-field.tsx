@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 const MIN = 400;
 const STORED = 256;
@@ -81,14 +81,14 @@ export function LogoField({
   const input = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-[13px] text-fg-muted">{label}</span>
+      <span className="text-13 text-fg-muted">{label}</span>
       <div className="flex flex-wrap items-center gap-3">
         <LogoPreview src={value} />
         <Button variant="outline" size="sm" onClick={() => input.current?.click()}>
           {value ? "Replace" : "Upload"}
         </Button>
         {value ? (
-          <button type="button" onClick={() => onChange(null)} className="text-[13px] text-fg-muted hover:text-fg">
+          <button type="button" onClick={() => onChange(null)} className="text-13 text-fg-muted hover:text-fg">
             Remove
           </button>
         ) : (
