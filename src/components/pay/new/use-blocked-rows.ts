@@ -4,12 +4,13 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { pluralize } from "@/lib/utils/format";
-import { emptyRow, rowsTotal, type RecipientRow, type validateRows } from "@/lib/recipients";
+import { emptyRow, isFieldTouched, rowsTotal, type RecipientRow, type RowField, type validateRows } from "@/lib/recipients";
 
 /**
- * Rows that can't be paid, and what's left once they're set aside. A bad wallet counts as soon
- * as it's typed; other problems (a half-typed row) only after Review has been tried. Nothing is
- * sent until blocked rows are fixed or removed, so the summary counts only the payable ones.
+ * Rows that can't be paid, and what's left once they're set aside. A problem counts once its
+ * field is touched (left after typing, or the whole row for imported/pasted/loaded rows), or after
+ * Review has been tried: the same rule as the red cells, so the count and the table agree.
+ * Nothing is sent until blocked rows are fixed or removed, so the summary counts only payable ones.
  */
 export function useBlockedRows({
   rows,
@@ -23,9 +24,11 @@ export function useBlockedRows({
   attempted: boolean;
 }) {
   const byKey = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
-  const blockedKeys = Object.keys(validation.errors).filter(
-    (k) => attempted || (validation.errors[k].wallet && byKey.get(k)?.wallet.trim()),
-  );
+  const blockedKeys = Object.keys(validation.errors).filter((k) => {
+    if (attempted) return true;
+    const row = byKey.get(k);
+    return !!row && (Object.keys(validation.errors[k]) as RowField[]).some((f) => isFieldTouched(row, f));
+  });
   const blocked = new Set(blockedKeys);
   const payable = rows.filter((r) => !blocked.has(r.key));
 

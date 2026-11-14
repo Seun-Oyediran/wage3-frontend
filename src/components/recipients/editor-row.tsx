@@ -4,8 +4,7 @@ import { motion } from "motion/react";
 import type { ClipboardEvent, InputHTMLAttributes, KeyboardEvent } from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import { DeleteIcon, HashIcon } from "@/components/ui/icons";
-import { Tooltip } from "@/components/ui/tooltip";
+import { HashIcon, RemoveCircleIcon } from "@/components/ui/icons";
 import { cn } from "@/lib/utils/cn";
 import { USDC } from "@/lib/config";
 import { EASE_DRAWER } from "@/lib/motion";
@@ -39,7 +38,7 @@ export function EditorHeaderRow({
   return (
     <div
       className={cn(
-        "hidden gap-px border-b border-border bg-surface-sunken text-xs font-medium text-fg-subtle md:grid",
+        "hidden gap-px bg-surface-sunken text-12 font-medium text-fg-subtle md:grid",
         GRID,
         flush && "md:pl-1.5",
       )}
@@ -55,7 +54,7 @@ export function EditorHeaderRow({
           />
         )}
       </span>
-      <span className="flex justify-end py-2.5 pr-2">
+      <span className="flex items-center justify-end py-2.5 pr-2">
         <HashIcon className="size-3.5" aria-hidden={false} role="img" aria-label="Row" />
       </span>
       <span className="px-3 py-2.5">Name</span>
@@ -82,8 +81,8 @@ export function EditorRow({
   checked,
   disabled,
   flush,
+  onlyRow,
   errors,
-  emailWarning,
   walletWarning,
   onField,
   onTouch,
@@ -99,9 +98,10 @@ export function EditorRow({
   checked: boolean;
   disabled: boolean;
   flush: boolean;
+  /** It's the table's only row. */
+  onlyRow: boolean;
   /** Errors to show now (already filtered to touched fields). */
   errors: Pick<RowErrors, "name" | "wallet" | "amount">;
-  emailWarning?: string;
   walletWarning?: string;
   onField: (field: Field, value: string) => void;
   onTouch: (field: Field) => void;
@@ -130,13 +130,16 @@ export function EditorRow({
       exit="gone"
       transition={{ layout: { duration: 0.28, ease: EASE_DRAWER } }}
       className={cn(
-        "group grid grid-cols-[minmax(0,1fr)_2.5rem] gap-x-2 gap-y-1 p-3 transition-colors duration-100 md:items-start md:gap-0 md:p-0",
+        // Desktop: 4px above and below the 40px cells, so a hovered or focused cell's fill never
+        // touches the header or footer fills.
+        "group grid grid-cols-[minmax(0,1fr)_2.5rem] gap-x-2 gap-y-1 p-3 transition-colors duration-100 md:items-start md:gap-0 md:px-0 md:py-1",
         GRID,
         flush && "px-5 md:pl-1.5",
       )}
     >
       {/* Selection is desktop only: on phones the bulk tools apply to everyone. */}
-      <span className="hidden justify-center md:flex md:pt-3.5">
+      {/* Checkbox, number and remove are centred on the 40px cell, not placed by padding. */}
+      <span className="hidden h-10 items-center justify-center md:flex">
         {!disabled && !isBlankRow(r) && (
           <Checkbox
             checked={checked}
@@ -145,13 +148,13 @@ export function EditorRow({
           />
         )}
       </span>
-      <span className={cn("hidden pt-3 pr-2 text-right text-xs tabular md:block", checked ? "text-(--blue-11)" : "text-fg-subtle")}>
+      <span className={cn("hidden h-10 items-center justify-end pr-2 text-12 tabular md:flex", checked ? "text-(--blue-11)" : "text-fg-subtle")}>
         {number}
       </span>
       <div className="grid grid-cols-2 gap-2 md:contents">
         <Cell {...cell("name")} value={r.name} placeholder="Name" error={errors.name} />
-        {/* Optional: a bad email is flagged amber once left, but never blocks the row. */}
-        <Cell {...cell("email")} value={r.email} placeholder="Email" type="email" warning={emailWarning} />
+        {/* Optional and never blocks the row, so a doubtful email isn't flagged at all. */}
+        <Cell {...cell("email")} value={r.email} placeholder="Email" type="email" />
       </div>
       <div className="col-start-1 md:contents">
         <Cell
@@ -172,25 +175,25 @@ export function EditorRow({
           placeholder={mode === "list" ? "Optional" : "0.00"}
           inputMode="decimal"
           align="right"
-          mono
+          tabular
           error={errors.amount}
           onKeyDown={onAmountKeyDown}
         />
       </div>
-      {disabled ? (
+      {/* The lone blank row has nothing to remove, so no cross on it. */}
+      {disabled || (onlyRow && isBlankRow(r)) ? (
         <span />
       ) : (
-        <div className="col-start-2 row-span-3 row-start-1 flex justify-end pt-1 md:col-auto md:row-auto md:row-span-1 md:justify-center md:pt-1.5">
-          <Tooltip content="Remove">
-            <button
-              type="button"
-              onClick={onRemove}
-              className="pressable grid size-8 place-items-center rounded-lg text-fg-subtle opacity-100 hover:bg-danger-soft hover:text-danger-fg md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-              aria-label={`Remove row ${number}`}
-            >
-              <DeleteIcon className="size-4" />
-            </button>
-          </Tooltip>
+        <div className="col-start-2 row-span-3 row-start-1 flex justify-end pt-1 md:col-auto md:row-auto md:row-span-1 md:h-10 md:items-center md:justify-center md:pt-0">
+          {/* No tooltip: the red cross says it. */}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="pressable grid size-8 cursor-pointer place-items-center text-danger-fg opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+            aria-label={`Remove row ${number}`}
+          >
+            <RemoveCircleIcon className="size-4.5" />
+          </button>
         </div>
       )}
     </motion.li>
@@ -203,6 +206,7 @@ function Cell({
   error,
   warning,
   mono,
+  tabular,
   align,
   selected,
   className,
@@ -213,12 +217,16 @@ function Cell({
   error?: string;
   warning?: string;
   mono?: boolean;
+  /** Lined-up digits in the body font: amounts, as in the History table. */
+  tabular?: boolean;
   align?: "right";
   /** Row is ticked: the text turns the selection blue (no row fill). */
   selected?: boolean;
 }) {
   return (
-    <div className="min-w-0">
+    // Desktop: 4px either side, so two flagged (or hovered) cells side by side never touch. The
+    // input's own padding drops by the same 4px, so the text still lines up with the header.
+    <div className="min-w-0 md:px-1">
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -226,18 +234,22 @@ function Cell({
         title={error ?? warning}
         className={cn(
           // Phones: a field like the app's other inputs. Desktop: a borderless table cell with an inset focus line.
-          "h-10 w-full min-w-0 rounded-xl border border-border-subtle bg-surface px-3 text-sm outline-none transition-[border-color,box-shadow,background-color] duration-150",
+          "h-10 w-full min-w-0 rounded-xl border border-border-subtle bg-surface px-3 text-13 outline-none md:px-2 transition-[border-color,box-shadow,background-color] duration-150",
           "hover:border-border focus:border-primary focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--primary)_18%,transparent)]",
-          "md:h-11 md:rounded-[6px] md:border-transparent md:bg-transparent md:hover:border-transparent md:hover:bg-surface-hover",
+          "md:h-10 md:rounded-[6px] md:border-transparent md:bg-transparent md:hover:border-transparent md:hover:bg-surface-hover",
           "md:focus:border-transparent md:focus:bg-surface md:focus:shadow-[inset_0_0_0_1px_var(--primary)]",
           "placeholder:text-fg-subtle/80 disabled:cursor-default disabled:hover:bg-transparent",
-          mono && "font-mono text-13 tabular",
+          mono && "font-mono tabular",
+          tabular && "tabular",
           align === "right" && "md:text-right",
           selected && "text-(--blue-11)",
-          // Problems get a fill and a border, on desktop too where cells are otherwise borderless:
-          // red for an error, amber for a warning (an email typo, a wallet paid twice).
-          error && "border-(--red-7) bg-danger-soft/60 text-danger-fg md:border-(--red-7) md:bg-danger-soft/50",
-          !error && warning && "border-(--amber-7) bg-warning-soft/60 text-warning-fg md:border-(--amber-7) md:bg-warning-soft/50",
+          // Problems get a fill: red for an error (no border, the fill is enough), amber with a border
+          // for a warning (a wallet paid twice, your own wallet).
+          // The fill holds through hover and focus, until the value is changed and the problem clears.
+          error && "bg-danger-soft/60 text-danger-fg md:bg-danger-soft/50 md:hover:bg-danger-soft/50 md:focus:bg-danger-soft/50",
+          !error &&
+            warning &&
+            "border-(--amber-7) bg-warning-soft/60 text-warning-fg md:border-(--amber-7) md:bg-warning-soft/50 md:hover:bg-warning-soft/50 md:focus:bg-warning-soft/50",
           className,
         )}
         {...props}

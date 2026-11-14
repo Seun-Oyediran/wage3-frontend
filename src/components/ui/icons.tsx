@@ -58,6 +58,22 @@ export function SidebarIcon({ open, ...props }: SVGProps<SVGSVGElement> & { open
   );
 }
 
+/** A cross in a circle: remove a row. The circle is filled with its own colour at low opacity. Same 24 grid and 2px stroke. */
+export function RemoveCircleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" aria-hidden {...props}>
+      <circle cx="12" cy="12" r="9" fill="currentColor" fillOpacity={0.12} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M8.875 8.875L15.125 15.125M15.125 8.875L8.875 15.125"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** Bell with a round clapper. Same 24 grid and 2px stroke as the other nav icons. */
 export function BellIcon(props: SVGProps<SVGSVGElement>) {
   return (

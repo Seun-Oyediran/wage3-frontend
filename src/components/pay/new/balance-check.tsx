@@ -5,6 +5,7 @@ import { useConnection } from "wagmi";
 
 import { ConnectDialog } from "@/components/wallet/connect-dialog";
 import { useUsdcBalance } from "@/hooks/use-usdc-balance";
+import { DOTTED_UNDERLINE } from "@/lib/type";
 import { cn } from "@/lib/utils/cn";
 import { USDC } from "@/lib/config";
 import { formatAmount, formatFigure } from "@/lib/utils/format";
@@ -24,9 +25,9 @@ export function BalanceCheck({ total }: { total: bigint }) {
         <button
           type="button"
           onClick={() => setConnectOpen(true)}
-          className="mt-4 text-13 text-fg-muted underline-offset-4 hover:text-fg hover:underline"
+          className="mt-4 text-left text-13 text-fg-muted"
         >
-          Connect wallet to check balance
+          <span className={cn("font-medium text-fg", DOTTED_UNDERLINE)}>Connect wallet</span> to check your balance
         </button>
         <ConnectDialog open={connectOpen} onOpenChange={setConnectOpen} />
       </>

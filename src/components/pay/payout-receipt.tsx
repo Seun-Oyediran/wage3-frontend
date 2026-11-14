@@ -2,13 +2,13 @@
 
 import { motion } from "motion/react";
 import { Clock } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Address } from "@/components/ui/address";
 import { RecipientReceipt } from "@/components/pay/recipient-receipt";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BatchStatusBadge, ItemStatusBadge } from "@/components/ui/status-badge";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -33,7 +33,7 @@ export function PayoutProgress({ payout }: { payout: Payout }) {
     <Card className="overflow-hidden">
       <div className="flex flex-col gap-6 p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div className="flex items-center gap-2 text-14 font-medium">
             {paid ? (
               <motion.span
                 initial={{ opacity: 0, transform: "scale(0.8)" }}
@@ -59,9 +59,9 @@ export function PayoutProgress({ payout }: { payout: Payout }) {
           {/* Money in the display figure like every other amount; the one big number on the page. */}
           <div className="mt-3 flex items-baseline gap-2">
             <span className={cn(DISPLAY_FIGURE, "text-40")} title={formatAmount(payout.total_amount, decimals)}>{formatFigure(payout.total_amount, decimals)}</span>
-            <span className="text-base text-fg-muted">{symbol}</span>
+            <span className="text-15 text-fg-muted">{symbol}</span>
           </div>
-          <div className="mt-1 text-sm text-fg-muted">
+          <div className="mt-1 text-14 text-fg-muted">
             to {pluralize(payout.recipient_count ?? payout.items.length, "person", "people")}
             {payout.sender_address && (
               <>
@@ -92,16 +92,25 @@ export function PayoutProgress({ payout }: { payout: Payout }) {
   );
 }
 
+/** A heading above a standalone table, with optional actions on the right. No rule: spacing sets it apart. */
+function SectionHeading({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <div className="mb-3 flex min-h-9 items-center justify-between gap-3">
+      <CardTitle>{title}</CardTitle>
+      {children && <div className="flex items-center gap-2">{children}</div>}
+    </div>
+  );
+}
+
 export function BatchList({ payout }: { payout: Payout }) {
   if (payout.batches.length <= 1 && !payout.batches[0]?.tx_hash) return null;
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle>Transactions</CardTitle>
-      </CardHeader>
-      <ul className="divide-y divide-border border-t border-border">
+    <section>
+      <SectionHeading title="Transactions" />
+      <Card className="overflow-hidden">
+      <ul className="divide-y divide-border">
         {payout.batches.map((b) => (
-          <li key={b.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-sm">
+          <li key={b.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-13">
             <span className="w-20 font-medium">Batch {b.batch_index + 1}</span>
             <span className="text-fg-muted tabular">
               {pluralize(b.recipient_count, "person", "people")} · {formatAmount(b.total_amount, payout.token_decimals ?? USDC.decimals)}{" "}
@@ -113,7 +122,7 @@ export function BatchList({ payout }: { payout: Payout }) {
                   href={txUrl(b.tx_hash)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 font-mono text-13 text-fg-muted hover:text-fg"
+                  className="inline-flex items-center gap-1 font-mono text-12 text-fg-muted hover:text-fg"
                 >
                   {shortAddress(b.tx_hash, 6)} <ExternalIcon className="size-3" />
                 </a>
@@ -123,7 +132,8 @@ export function BatchList({ payout }: { payout: Payout }) {
           </li>
         ))}
       </ul>
-    </Card>
+      </Card>
+    </section>
   );
 }
 
@@ -135,6 +145,8 @@ export function ItemsTable({ payout }: { payout: Payout }) {
   const [visible, setVisible] = useState(PAGE);
   const decimals = payout.token_decimals ?? USDC.decimals;
   const showStatus = payout.status !== "draft";
+  // When everyone's paid the status column only repeats "Paid", so it shows only when it says something.
+  const statusColumn = showStatus && payout.items.some((i) => i.status !== "paid");
   // The person whose receipt is in the drawer (kept while it closes).
   const [receipt, setReceipt] = useState<PayoutItem | null>(null);
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -153,10 +165,8 @@ export function ItemsTable({ payout }: { payout: Payout }) {
   }, [payout.items, query]);
 
   return (
-    <Card>
-      <CardHeader className="items-center pb-3">
-        <CardTitle>{pluralize(payout.items.length, "person", "people")}</CardTitle>
-        <div className="flex items-center gap-2">
+    <section>
+      <SectionHeading title={pluralize(payout.items.length, "person", "people")}>
           {payout.items.length > 8 && (
             <div className="w-56">
               <Input
@@ -164,7 +174,7 @@ export function ItemsTable({ payout }: { payout: Payout }) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search people"
                 leading={<SearchIcon className="size-4" />}
-                className="h-9 text-sm"
+                className="h-9 text-13"
               />
             </div>
           )}
@@ -172,10 +182,9 @@ export function ItemsTable({ payout }: { payout: Payout }) {
           {showStatus && (
             <Tooltip content="Export CSV" align="end">
               <Button
-                variant="outline"
+                variant="filled"
                 size="icon"
                 aria-label="Export CSV"
-                className="rounded-xl [corner-shape:superellipse(1.5)]"
                 onClick={() => {
                   downloadPayoutCsv(payout);
                   toast.success(`Exported ${pluralize(payout.items.length, "person", "people")}`);
@@ -185,16 +194,21 @@ export function ItemsTable({ payout }: { payout: Payout }) {
               </Button>
             </Tooltip>
           )}
-        </div>
-      </CardHeader>
-      <div className="overflow-x-auto border-t border-border">
-        <table className="w-full min-w-[560px] text-sm">
+      </SectionHeading>
+      {/* History's table rules: the header's fill is the only separation, one 13px size with the
+          name and amount as the dark anchors and everything else grey. */}
+      <Card className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[560px] text-13">
           <thead>
-            <tr className="bg-surface-sunken text-left text-xs text-fg-subtle">
-              <th className="px-5 py-2.5 font-medium">Name</th>
-              <th className="px-3 py-2.5 font-medium">Wallet</th>
-              <th className="px-3 py-2.5 text-right font-medium">Amount</th>
-              {showStatus && <th className="px-5 py-2.5 text-right font-medium">Status</th>}
+            <tr className="bg-surface-sunken text-left text-12 text-fg-subtle">
+              <th className="px-5 py-3 font-medium">Name</th>
+              <th className="px-3 py-3 font-medium">Wallet</th>
+              {/* The last column takes the table's 20px edge padding. */}
+              <th className={cn("py-3 pl-3 text-right font-medium", statusColumn ? "pr-3" : "pr-5")}>
+                Amount <span className="font-normal">({payout.token_symbol ?? USDC.symbol})</span>
+              </th>
+              {statusColumn && <th className="px-5 py-3 text-right font-medium">Status</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -222,13 +236,15 @@ export function ItemsTable({ payout }: { payout: Payout }) {
                   ) : (
                     <div className="truncate font-medium">{i.name || <span className="font-normal text-fg-subtle">No name</span>}</div>
                   )}
-                  {i.email && <div className="truncate text-xs text-fg-subtle">{i.email}</div>}
+                  {i.email && <div className="truncate text-12 text-fg-subtle">{i.email}</div>}
                 </td>
                 <td className="px-3 py-3">
-                  <Address value={i.wallet_address} showActions="hover" />
+                  <Address value={i.wallet_address} showActions="hover" textClassName="text-12 text-fg-muted" />
                 </td>
-                <td className="px-3 py-3 text-right font-mono text-13 tabular">{formatAmount(i.amount, decimals)}</td>
-                {showStatus && (
+                <td className={cn("py-3 pl-3 text-right font-medium tabular", statusColumn ? "pr-3" : "pr-5")}>
+                  {formatAmount(i.amount, decimals)}
+                </td>
+                {statusColumn && (
                   <td className="px-5 py-3 text-right">
                     <ItemStatusBadge status={i.status} />
                   </td>
@@ -237,18 +253,19 @@ export function ItemsTable({ payout }: { payout: Payout }) {
             ))}
           </tbody>
         </table>
-        {!filtered.length && <p className="px-5 py-8 text-center text-sm text-fg-muted">No one matches “{query}”.</p>}
+        {!filtered.length && <p className="px-5 py-8 text-center text-13 text-fg-muted">No one matches “{query}”.</p>}
       </div>
-      <RecipientReceipt payout={payout} item={receipt} open={receiptOpen} onOpenChange={setReceiptOpen} />
       {filtered.length > visible && (
         <button
           type="button"
           onClick={() => setVisible((v) => v + PAGE * 4)}
-          className="w-full border-t border-border py-3 text-sm font-medium text-fg-muted hover:text-fg"
+          className="w-full bg-surface-sunken py-3 text-13 font-medium text-fg-muted hover:text-fg"
         >
           Show more ({filtered.length - visible} left)
         </button>
       )}
-    </Card>
+      </Card>
+      <RecipientReceipt payout={payout} item={receipt} open={receiptOpen} onOpenChange={setReceiptOpen} />
+    </section>
   );
 }

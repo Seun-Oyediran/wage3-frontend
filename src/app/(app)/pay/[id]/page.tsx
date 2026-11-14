@@ -39,15 +39,24 @@ export default function PayoutPage() {
   return <PayoutView payout={query.data} />;
 }
 
+/**
+ * The header at its real size (34px title, the status line, 40px under it), so the title and status
+ * land where the skeleton was. What's below depends on the payment's state, unknown until it loads,
+ * so a single neutral block stands in.
+ */
 function PayoutSkeleton() {
   return (
     <div aria-busy>
-      <Skeleton className="h-9 w-72" />
-      <Skeleton className="mt-3 h-6 w-64" />
-      <div className="mt-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <Skeleton className="h-96 rounded-2xl" />
-        <Skeleton className="h-[28rem] rounded-2xl" />
+      <div className="pb-10">
+        <div className="flex h-8.5 items-center">
+          <Skeleton className="h-6 w-72 max-w-full" />
+        </div>
+        <div className="mt-3 flex h-6 items-center gap-2">
+          <Skeleton className="h-6 w-14 rounded-full" />
+          <Skeleton className="h-3.5 w-44" />
+        </div>
       </div>
+      <Skeleton className="h-34 rounded-2xl" />
     </div>
   );
 }

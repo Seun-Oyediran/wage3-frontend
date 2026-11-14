@@ -8,7 +8,7 @@ import { toastTone } from "@/components/ui/toast-tone";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils/cn";
 import { USDC } from "@/lib/config";
-import { formatCount, formatAmount } from "@/lib/utils/format";
+import { formatAmount, formatCount, formatFigure } from "@/lib/utils/format";
 import { EASE_OUT } from "@/lib/motion";
 
 import { BulkAmountToastForm, type BulkKind } from "./bulk-amount-form";
@@ -54,11 +54,16 @@ export function SelectionToast({
         ) : (
           <motion.div layout="position" key="summary" className="flex min-w-0 flex-1 items-center gap-1">
             <p className="mr-auto flex min-w-0 items-baseline gap-1 text-15 font-medium tabular">
-              {/* The count rolls rather than swapping, so it reads as one toast updating. */}
-              <span className="relative inline-flex overflow-hidden">
-                <AnimatePresence mode="popLayout" initial={false}>
+              {/* The count rolls rather than swapping, so it reads as one toast updating. An invisible
+                  copy of the current count sizes the box, so 9 → 10 widens it instead of clipping. */}
+              <span className="relative inline-flex shrink-0 overflow-hidden">
+                <span className="invisible" aria-hidden>
+                  {formatCount(count)}
+                </span>
+                <AnimatePresence initial={false}>
                   <motion.span
                     key={count}
+                    className="absolute inset-y-0 left-0"
                     initial={{ opacity: 0, transform: "translateY(60%)" }}
                     animate={{ opacity: 1, transform: "translateY(0%)" }}
                     exit={{ opacity: 0, transform: "translateY(-60%)" }}
@@ -68,9 +73,13 @@ export function SelectionToast({
                   </motion.span>
                 </AnimatePresence>
               </span>
-              <span>selected</span>
-              <span className={cn("ml-1 truncate text-13 font-normal", toastTone.muted)}>
-                {formatAmount(total)} {USDC.symbol}
+              <span className="shrink-0">selected</span>
+              {/* Shortened like the summary card's total ("100B"); the exact amount is in the title. */}
+              <span
+                className={cn("ml-1 truncate text-13 font-normal", toastTone.muted)}
+                title={`${formatAmount(total)} ${USDC.symbol}`}
+              >
+                {formatFigure(total)} {USDC.symbol}
               </span>
             </p>
             <ToastAction onClick={() => onBulk("same")}>Set amount</ToastAction>

@@ -5,6 +5,9 @@ import type { PayoutItem, PayoutItemInput, Recipient, RecipientInput } from "@/l
 import { USDC } from "./config";
 import { cleanWallet, parseAmount, toInputAmount, validateEmail, validateWallet } from "@/lib/utils/format";
 
+export type RowErrors = Partial<Record<"name" | "email" | "wallet" | "amount", string>>;
+export type RowField = keyof RowErrors;
+
 /** One editable row. `amount` is what the user typed (display units), not base units. */
 export type RecipientRow = {
   key: string;
@@ -12,9 +15,34 @@ export type RecipientRow = {
   email: string;
   wallet: string;
   amount: string;
+  /**
+   * Fields whose problems show and count now. A typed row gains each field as you leave it, so a
+   * half-typed row isn't flagged mid-way. Imported and pasted rows start fully touched (the file
+   * is meant to be final, so a missing wallet or amount is a real problem now). Rows loaded from a
+   * list or payment start with only their filled fields touched (a list's empty default amounts
+   * are yours to fill in, not mistakes). Review shows the rest regardless.
+   */
+  touched?: RowField[];
 };
 
-export type RowErrors = Partial<Record<"name" | "email" | "wallet" | "amount", string>>;
+export const isFieldTouched = (r: RecipientRow, field: RowField) => !!r.touched?.includes(field);
+
+/** The row with `field` touched; the same object if it already was (so nothing re-renders). */
+export function touchField(r: RecipientRow, field: RowField): RecipientRow {
+  if (isFieldTouched(r, field)) return r;
+  return { ...r, touched: [...(r.touched ?? []), field] };
+}
+
+const FIELDS: RowField[] = ["name", "email", "wallet", "amount"];
+
+/** A row loaded from a list or payment: what's in it is checked now; what's missing waits for Review. */
+export const withFilledTouched = (r: RecipientRow): RecipientRow => ({
+  ...r,
+  touched: FIELDS.filter((f) => r[f].trim() !== ""),
+});
+
+/** An imported or pasted row: every field is checked now, empty ones included. */
+export const withAllTouched = (r: RecipientRow): RecipientRow => ({ ...r, touched: [...FIELDS] });
 
 /** "list": amount is an optional default. "payout": amount is required. */
 export type EditorMode = "list" | "payout";
@@ -137,7 +165,7 @@ export function rowsFromRecipients(recipients: Recipient[]): RecipientRow[] {
     email: r.email ?? "",
     wallet: r.wallet_address,
     amount: toInputAmount(r.default_amount),
-  }));
+  })).map(withFilledTouched);
 }
 
 export function rowsFromPayoutItems(items: Pick<PayoutItem, "name" | "email" | "wallet_address" | "amount">[]): RecipientRow[] {
@@ -147,12 +175,12 @@ export function rowsFromPayoutItems(items: Pick<PayoutItem, "name" | "email" | "
     email: i.email ?? "",
     wallet: i.wallet_address,
     amount: toInputAmount(i.amount),
-  }));
+  })).map(withFilledTouched);
 }
 
 // ---- CSV / paste import ----
 
-const HEADER_ALIASES: Record<keyof Omit<RecipientRow, "key">, string[]> = {
+const HEADER_ALIASES: Record<RowField, string[]> = {
   name: ["name", "full name", "full_name", "recipient", "contributor"],
   email: ["email", "e-mail", "email address", "mail"],
   wallet: ["wallet", "wallet address", "wallet_address", "address", "evm_address", "evm address", "recipient address", "to"],

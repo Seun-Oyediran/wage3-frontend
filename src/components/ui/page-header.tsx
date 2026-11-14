@@ -19,7 +19,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-col gap-4 pb-8 sm:flex-row sm:items-center sm:justify-between",
+        "flex flex-col gap-4 pb-10 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
@@ -50,10 +50,13 @@ export function PageHeader({
   );
 }
 
-/** PageHeader's footprint while a page can't render yet: the title's 32px line and one line of description. */
-export function PageHeaderSkeleton() {
+/**
+ * PageHeader's footprint while a page can't render yet: the title's 32px line and one line of
+ * description. Pass the same spacing class as the page's PageHeader (e.g. "pb-22") if it has one.
+ */
+export function PageHeaderSkeleton({ className }: { className?: string }) {
   return (
-    <div aria-hidden className="pb-8">
+    <div aria-hidden className={cn("pb-10", className)}>
       <div className="flex h-8 items-center">
         <Skeleton className="h-6 w-48" />
       </div>

@@ -1,12 +1,12 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence } from "motion/react";
 import { useCallback, useMemo, useRef, useState, type ClipboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useConnection } from "wagmi";
 
-import { ImportIcon, PlusIcon } from "@/components/ui/icons";
+import { PlusIcon } from "@/components/ui/icons";
 import { Kbd, ModKey } from "@/components/ui/kbd";
 import { usePageFileDrop } from "@/hooks/use-page-file-drop";
 import { useRowSelection } from "@/hooks/use-row-selection";
@@ -14,12 +14,14 @@ import { useHydrated } from "@/lib/auth/use-session";
 import { cn } from "@/lib/utils/cn";
 import { LIMITS } from "@/lib/config";
 import {
-  emailWarning,
   isBlankRow,
+  isFieldTouched,
   parseRecipientsText,
   readRecipientsFile,
   rowsTotal,
+  touchField,
   validateRows,
+  withAllTouched,
   walletWarning,
   type EditorMode,
   type ParsedImport,
@@ -66,7 +68,6 @@ export function RecipientsEditor({
   only?: Set<string> | null;
   max?: number;
 }) {
-  const [touched, setTouched] = useState<Set<string>>(new Set());
   const [visible, setVisible] = useState(PAGE);
   const [importOpen, setImportOpen] = useState(false);
   const [dropped, setDropped] = useState<ParsedImport | null>(null);
@@ -111,10 +112,14 @@ export function RecipientsEditor({
       }),
   });
 
-  const touch = (key: string, field: Field) =>
-    setTouched((t) => (t.has(`${key}.${field}`) ? t : new Set(t).add(`${key}.${field}`)));
-  const isTouched = (key: string, field: Field) => showAllErrors || touched.has(`${key}.${field}`);
-  const shownError = (key: string, field: Field) => (isTouched(key, field) ? errors[key]?.[field] : undefined);
+  // Touched state lives on the rows (see RecipientRow.touched), so the page's blocked count and
+  // the red cells here follow the same rule.
+  const touch = (key: string, field: Field) => {
+    const next = rows.map((x) => (x.key === key ? touchField(x, field) : x));
+    if (next.some((x, i) => x !== rows[i])) onChange(next);
+  };
+  const shownError = (r: RecipientRow, field: Field) =>
+    showAllErrors || isFieldTouched(r, field) ? errors[r.key]?.[field] : undefined;
 
   const rowEl = (key: string, selector = "") => containerRef.current?.querySelector<HTMLElement>(`[data-row="${key}"]${selector}`);
 
@@ -126,7 +131,8 @@ export function RecipientsEditor({
   };
 
   const addRows = (incoming: RecipientRow[], opts?: { replace?: boolean; verb?: string }) => {
-    const { count, firstAdded } = actions.addRows(incoming, opts);
+    // Imported or pasted rows are meant to be final: every problem in them flags now, not after Review.
+    const { count, firstAdded } = actions.addRows(incoming.map(withAllTouched), opts);
     setVisible((v) => Math.max(v, count));
     // Show where they went.
     if (firstAdded) requestAnimationFrame(() => rowEl(firstAdded)?.scrollIntoView({ behavior: "smooth", block: "center" }));
@@ -193,36 +199,12 @@ export function RecipientsEditor({
         )}
       </AnimatePresence>
 
-      {/* Nobody yet: one quiet line for the CSV route. Desktop only: phones can't drag files in. */}
-      <AnimatePresence initial={false}>
-        {filledCount === 0 && !disabled && (
-          <motion.button
-            type="button"
-            onClick={() => setImportOpen(true)}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0, transition: { duration: 0.15 } }}
-            className="group hidden overflow-hidden text-left md:block"
-          >
-            <div className="mb-4 flex items-center gap-2.5 rounded-xl border border-dashed border-border px-4 py-3 text-13 text-fg-muted transition-colors duration-150 group-hover:bg-surface-hover">
-              <ImportIcon className="size-4 shrink-0" />
-              <span>
-                Drop a CSV anywhere on this page, or <span className="font-medium text-fg">choose a file</span>. You&apos;ll
-                pick who to add before anything changes.
-              </span>
-            </div>
-          </motion.button>
-        )}
-      </AnimatePresence>
-
+      {/* Flush in a card: no rules around the table; the header's fill and the row lines are the
+          only separation, so the sections either side breathe on spacing alone. */}
       <div
         className={cn(
           "relative",
-          flush === "end"
-            ? "-mx-5 -mb-5 border-t border-border"
-            : flush
-              ? "-mx-5 border-y border-border"
-              : "overflow-hidden rounded-2xl border border-border",
+          flush === "end" ? "-mx-5 -mb-5" : flush ? "-mx-5" : "overflow-hidden rounded-2xl bg-surface shadow-(--shadow-xs)",
         )}
       >
         <EditorHeaderRow
@@ -243,8 +225,8 @@ export function RecipientsEditor({
                 checked={sel.selected.has(r.key)}
                 disabled={disabled}
                 flush={!!flush}
-                errors={{ name: shownError(r.key, "name"), wallet: shownError(r.key, "wallet"), amount: shownError(r.key, "amount") }}
-                emailWarning={isTouched(r.key, "email") ? emailWarning(r) : undefined}
+                onlyRow={rows.length === 1}
+                errors={{ name: shownError(r, "name"), wallet: shownError(r, "wallet"), amount: shownError(r, "amount") }}
                 walletWarning={mode === "payout" ? walletWarning(r, { duplicate: duplicates.has(r.key), ownWallet }) : undefined}
                 onField={(field, value) => onChange(rows.map((x) => (x.key === r.key ? { ...x, [field]: value } : x)))}
                 onTouch={(field) => touch(r.key, field)}
@@ -267,7 +249,7 @@ export function RecipientsEditor({
           <button
             type="button"
             onClick={() => setVisible((v) => v + PAGE * 5)}
-            className="w-full border-t border-border bg-surface-sunken py-3 text-sm font-medium text-fg-muted hover:text-fg"
+            className="w-full bg-surface-sunken py-3 text-13 font-medium text-fg-muted hover:text-fg"
           >
             Show {Math.min(inView.length - visible, PAGE * 5)} more of {inView.length - visible}
           </button>
@@ -280,12 +262,13 @@ export function RecipientsEditor({
             onClick={addRow}
             disabled={filledCount >= max}
             className={cn(
-              "flex w-full items-center gap-2 border-t border-border py-3 text-sm font-medium text-fg-muted transition-colors duration-150 hover:bg-surface-hover hover:text-fg disabled:opacity-45",
+              // The table's footer: filled like the header, so the table reads as one box with a top and a bottom.
+              "flex w-full items-center gap-2 bg-surface-sunken py-3 text-13 font-medium text-fg-muted transition-colors duration-150 hover:bg-surface-muted hover:text-fg disabled:opacity-45",
               flush ? "px-5" : "px-4",
             )}
           >
             <PlusIcon className="size-4" /> Add person
-            <span className="ml-auto hidden items-center gap-1 text-xs font-normal text-fg-subtle sm:inline-flex">
+            <span className="ml-auto hidden items-center gap-1 text-12 font-normal text-fg-subtle sm:inline-flex">
               <ModKey />
               <Kbd>V</Kbd> to paste
             </span>
