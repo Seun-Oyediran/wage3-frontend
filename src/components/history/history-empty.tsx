@@ -1,18 +1,17 @@
-import Link from "next/link";
-
+import { EmptyIllustration } from "@/components/illustrations";
 import { NewPaymentButton } from "@/components/pay/new-payment-button";
 import { Button } from "@/components/ui/button";
-import { SearchIcon } from "@/components/ui/icons";
-import { EmptyState, IllustratedEmpty } from "@/components/ui/states";
+import { IllustratedEmpty } from "@/components/ui/states";
 
 export function NoMatches({ onClear }: { onClear: () => void }) {
   return (
-    <EmptyState
-      icon={<SearchIcon />}
+    <IllustratedEmpty
+      align="center"
+      illustration={<EmptyIllustration id="no-matches" className="size-32" />}
       title="Nothing matches these filters"
       description="Try a different name, status or date range."
-      action={
-        <Button variant="outline" size="sm" onClick={onClear}>
+      actions={
+        <Button variant="outline" size="sm" className="h-8 px-3 text-13" onClick={onClear}>
           Clear filters
         </Button>
       }
@@ -23,16 +22,11 @@ export function NoMatches({ onClear }: { onClear: () => void }) {
 export function NoPaymentsYet() {
   return (
     <IllustratedEmpty
-      title="Send your first payment"
-      description="Pay your whole team in USDC on Base. Every payment lands here with its on-chain receipt."
-      actions={
-        <>
-          <NewPaymentButton className="h-10 px-4 text-sm" />
-          <Link href="/#how" className="text-sm font-medium text-fg-muted hover:text-fg">
-            How it works
-          </Link>
-        </>
-      }
+      align="center"
+      illustration={<EmptyIllustration id="rows" className="size-32" />}
+      title="No payment history yet"
+      description="Send your first payment and it'll show up here."
+      actions={<NewPaymentButton className="h-8 px-3 text-13" />}
     />
   );
 }

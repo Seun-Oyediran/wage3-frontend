@@ -11,10 +11,13 @@ import { Spinner } from "./spinner";
 
 const variants = {
   // Base Blue: one per screen, the action that matters most.
+  // Disabled fades (the shared 45% below) rather than turning grey, so it reads as the same action, not ready yet.
   primary: "bg-primary text-primary-fg hover:bg-primary-hover",
   inverse: "bg-inverse text-inverse-fg hover:bg-[oklch(0.3_0_0)]",
   secondary: "bg-surface-muted text-fg hover:bg-border",
   outline: "border border-border-subtle bg-surface text-fg hover:border-border hover:bg-surface-hover",
+  // Grey fill, no border: the search field's look, for the controls that sit beside it.
+  filled: "bg-surface-muted text-fg hover:bg-(--color-50)",
   ghost: "text-fg-muted hover:text-fg hover:bg-surface-hover",
   danger: "bg-danger-soft text-danger-fg hover:bg-danger hover:text-white",
 } as const;

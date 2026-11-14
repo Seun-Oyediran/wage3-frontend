@@ -49,7 +49,8 @@ export function PaymentSummary({
         <BalanceCheck total={total} />
       </div>
 
-      <div className="flex flex-col gap-4 bg-surface-sunken p-5">
+      {/* No band behind the action: spacing alone sets it apart, like the sections on the left. */}
+      <div className="flex flex-col gap-4 px-5 pb-5">
         {error && (
           <p role="alert" className="rounded-xl bg-danger-soft px-3.5 py-2.5 text-13 text-danger-fg">
             {error}

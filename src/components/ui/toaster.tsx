@@ -18,8 +18,8 @@ export function Toaster() {
       theme="light"
       gap={8}
       offset={24}
-      // Centre on the content panel like the selection toast: half the 240px desktop sidebar.
-      className="lg:!ml-30"
+      // Centre on the page beside the desktop sidebar, like the selection toast.
+      className="lg:ml-[calc(var(--sidebar-w)/2)]!"
       toastOptions={{
         unstyled: true,
         classNames: {

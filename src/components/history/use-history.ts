@@ -109,8 +109,7 @@ export function useHistory() {
     },
     goToPage: (p: number) => {
       setParams({ page: p > 1 ? String(p) : undefined });
-      // The page scrolls inside the app panel, not the window (see (app)/layout.tsx).
-      document.getElementById("app-scroll")?.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
   };
 }

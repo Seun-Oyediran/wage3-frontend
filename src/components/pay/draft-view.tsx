@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { RecipientsEditor } from "@/components/recipients/recipients-editor";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { Payout } from "@/lib/api/types";
 import { cn } from "@/lib/utils/cn";
@@ -36,17 +35,14 @@ export function DraftView({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
       <div className="flex min-w-0 flex-col gap-4">
         <ReviewFlags flags={checks.flags} checked={checks.checked} recentDuplicate={checks.recentDuplicate} />
-        {/* The table runs to the card's bottom edge, so the save notice and list option sit below it. */}
-        <Card className="min-w-0 overflow-hidden bg-(--color-25) p-5">
-          <RecipientsEditor
-            rows={draft.rows}
-            onChange={draft.setRows}
-            mode="payout"
-            flush="end"
-            showAllErrors={draft.attempted}
-            disabled={state.step !== "idle" && state.step !== "error"}
-          />
-        </Card>
+        {/* No card around it, as on New payment: the table stands on its own. */}
+        <RecipientsEditor
+          rows={draft.rows}
+          onChange={draft.setRows}
+          mode="payout"
+          showAllErrors={draft.attempted}
+          disabled={state.step !== "idle" && state.step !== "error"}
+        />
 
         <AnimatePresence initial={false}>
           {(draft.dirty || draft.saveError) && (

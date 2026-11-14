@@ -1,17 +1,18 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ComponentType, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useEffectEvent, type ComponentType } from "react";
 
-import { ChevronRightIcon, ExternalIcon, HashIcon, HistoryIcon, HomeIcon, ListIcon, PaymentIcon, SettingsIcon } from "@/components/ui/icons";
-import { Logo } from "@/components/ui/logo";
-import { SearchField } from "@/components/ui/search-field";
-import { WalletButton } from "@/components/wallet/wallet-button";
+import { ExternalIcon, HashIcon, HistoryIcon, HomeIcon, ListIcon, PaymentIcon, SettingsIcon, SidebarIcon } from "@/components/ui/icons";
+import { Kbd, ModKey } from "@/components/ui/kbd";
+import { Logo, LogoMark } from "@/components/ui/logo";
+import { Tooltip } from "@/components/ui/tooltip";
 import { addressUrl, BATCHER_ADDRESS } from "@/lib/config";
+import { useHydrated } from "@/lib/auth/use-session";
+import { useLocalValue } from "@/lib/local-prefs";
+import { SIDEBAR_COLLAPSED_KEY } from "@/lib/sidebar";
 import { cn } from "@/lib/utils/cn";
-import { EASE_OUT } from "@/lib/motion";
 
 import { UserCard } from "./user-menu";
 
@@ -38,225 +39,145 @@ const SECTIONS: { title?: string; links: NavLink[] }[] = [
   },
 ];
 
-const MOBILE = [
-  { href: "/dashboard", label: "Home" },
-  { href: "/lists", label: "Lists" },
-  { href: "/history", label: "History" },
-  { href: "/settings", label: "Settings" },
-] as const;
+const SETTINGS: NavLink = { href: "/settings", label: "Settings", icon: SettingsIcon };
 
-function useActive() {
+/** Whether a nav link is the current page or one of its children. */
+export function useActive() {
   const pathname = usePathname();
   return (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/** Desktop: fixed left rail. Hidden below `lg`, where the top bar carries the tabs instead. */
+/**
+ * One sidebar link. Collapsed, the label fades out (it's clipped by the rail) and moves to a
+ * tooltip. The icon sits 20px in either way, so it doesn't move when the rail collapses.
+ */
+function NavItem({ link, on, collapsed }: { link: NavLink; on: boolean; collapsed: boolean }) {
+  const item = (
+    <Link
+      href={link.href}
+      target={link.external ? "_blank" : undefined}
+      rel={link.external ? "noreferrer" : undefined}
+      aria-label={collapsed ? link.label : undefined}
+      className={cn(
+        // No transitions: hover and the active state change instantly, on click and on sweep.
+        "relative flex h-9 items-center gap-2.5 rounded-[8px] px-3 text-13 font-medium whitespace-nowrap [corner-shape:superellipse(1.5)]",
+        on ? "text-fg" : "text-fg-muted hover:bg-surface-hover hover:text-fg",
+      )}
+    >
+      {/* No slide between links: the highlight lands on the clicked link instantly. */}
+      {on && <span className="absolute inset-0 rounded-[8px] bg-(--color-200) [corner-shape:superellipse(1.5)]" />}
+      <link.icon className="relative size-4 shrink-0" />
+      <span className="relative flex flex-1 items-center gap-2.5 transition-opacity duration-150 collapsed:opacity-0">
+        <span className="flex-1">{link.label}</span>
+        {link.external && <ExternalIcon className="size-3.5 text-fg-subtle" />}
+      </span>
+    </Link>
+  );
+  return collapsed ? (
+    <Tooltip content={link.label} side="right">
+      {item}
+    </Tooltip>
+  ) : (
+    item
+  );
+}
+
+/**
+ * Desktop: full-height rail, collapsible to icons with ⌘\. Hidden below `lg`, where the top bar
+ * carries the tabs. How it looks collapsed comes from CSS (`collapsed:`, keyed to <html
+ * data-sidebar>), set before first paint, so it never loads wide and then shrinks. `collapsed`
+ * here only drives labels and tooltips.
+ */
 export function AppSidebar() {
   const active = useActive();
+  const hydrated = useHydrated();
+  const [stored, setStored] = useLocalValue(SIDEBAR_COLLAPSED_KEY);
+  const collapsed = stored === "1";
+  const toggle = () => setStored(collapsed ? null : "1");
+  const onShortcut = useEffectEvent(toggle);
+
+  // Mirrors the stored value onto <html>: on toggle, and when another tab changes it. Waits for
+  // hydration, whose first pass doesn't know the stored value and would undo the pre-paint script.
+  useEffect(() => {
+    if (!hydrated) return;
+    const root = document.documentElement;
+    if (collapsed) root.dataset.sidebar = "collapsed";
+    else delete root.dataset.sidebar;
+  }, [hydrated, collapsed]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Only where the sidebar shows; below lg it would toggle something you can't see.
+      if (!(e.metaKey || e.ctrlKey) || e.key !== "\\" || !window.matchMedia("(min-width: 64rem)").matches) return;
+      e.preventDefault();
+      onShortcut();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const toggleLabel = collapsed ? "Expand sidebar" : "Collapse sidebar";
 
   return (
-    <aside className="hidden h-dvh w-60 shrink-0 flex-col lg:flex">
-      <div className="flex h-16 items-center px-5">
-        <Link href="/dashboard" className="pressable rounded-md">
-          <Logo mark={false} />
+    <aside
+      data-app-sidebar
+      className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col overflow-hidden border-r border-border bg-surface-sunken transition-[width] duration-200 ease-(--ease-out) motion-reduce:transition-none collapsed:w-14 lg:flex"
+    >
+      {/* Collapsed, the mark stays where it is and hovering the header swaps it for the expand button. */}
+      <div className="group/head relative flex h-16 shrink-0 items-center pr-2 pl-5 collapsed:pl-4.5">
+        <Link
+          href="/dashboard"
+          aria-label="Home"
+          className="pressable rounded-md collapsed:group-hover/head:opacity-0 collapsed:group-has-focus-visible/head:opacity-0"
+        >
+          <Logo mark={false} className="collapsed:hidden" />
+          <LogoMark className="hidden collapsed:block" />
         </Link>
+        <Tooltip
+          content={
+            <>
+              {toggleLabel} <ModKey />
+              <Kbd>\</Kbd>
+            </>
+          }
+          side="right"
+        >
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={toggleLabel}
+            aria-expanded={!collapsed}
+            className="ml-auto grid size-7 place-items-center rounded-md text-fg-subtle hover:bg-surface-hover hover:text-fg collapsed:absolute collapsed:left-3.5 collapsed:ml-0 collapsed:opacity-0 collapsed:group-hover/head:opacity-100 collapsed:focus-visible:opacity-100"
+          >
+            <SidebarIcon open={collapsed} className="size-4" />
+          </button>
+        </Tooltip>
       </div>
 
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 pt-2">
+      <nav aria-label="Main" className="flex flex-1 flex-col gap-6 overflow-x-hidden overflow-y-auto px-2 pt-2">
         {SECTIONS.map((section, i) => (
           <div key={section.title ?? i} className="flex flex-col gap-0.5">
+            {/* Collapsed, the title keeps its space so the icons below don't shift up. */}
             {section.title && (
-              <div className="px-3 pb-1.5 text-13 text-fg-subtle">
+              <div
+                aria-hidden={collapsed}
+                className="px-3 pb-1.5 text-13 whitespace-nowrap text-fg-subtle transition-opacity duration-150 collapsed:opacity-0"
+              >
                 {section.title}
               </div>
             )}
-            {section.links.map((l) => {
-              const on = !l.external && active(l.href);
-              return (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  target={l.external ? "_blank" : undefined}
-                  rel={l.external ? "noreferrer" : undefined}
-                  className={cn(
-                    // No transitions: hover and the active state change instantly, on click and on sweep.
-                    "relative flex h-9 items-center gap-2.5 rounded-[8px] px-3 text-sm font-medium [corner-shape:superellipse(1.5)]",
-                    on ? "text-fg" : "text-fg-muted hover:bg-surface-hover hover:text-fg",
-                  )}
-                >
-                  {/* No slide between links: the highlight lands on the clicked link instantly. */}
-                  {on && <span className="absolute inset-0 rounded-[8px] bg-(--color-200) [corner-shape:superellipse(1.5)]" />}
-                  <l.icon className="relative size-4 shrink-0" />
-                  <span className="relative flex-1">{l.label}</span>
-                  {l.external && <ExternalIcon className="relative size-3.5 text-fg-subtle" />}
-                </Link>
-              );
-            })}
+            {section.links.map((l) => (
+              <NavItem key={l.href} link={l} on={!l.external && active(l.href)} collapsed={collapsed} />
+            ))}
           </div>
         ))}
       </nav>
 
-      {/* Settings sits at the bottom with the account, apart from the everyday sections. */}
-      <div className="flex flex-col gap-1 p-3">
-        <Link
-          href="/settings"
-          className={cn(
-            "relative flex h-9 items-center gap-2.5 rounded-[8px] px-3 text-sm font-medium [corner-shape:superellipse(1.5)]",
-            active("/settings") ? "text-fg" : "text-fg-muted hover:bg-surface-hover hover:text-fg",
-          )}
-        >
-          {active("/settings") && <span className="absolute inset-0 rounded-[8px] bg-(--color-200) [corner-shape:superellipse(1.5)]" />}
-          <SettingsIcon className="relative size-4 shrink-0" />
-          <span className="relative">Settings</span>
-        </Link>
-        <UserCard />
+      {/* Settings and the account sit at the bottom, apart from the everyday sections. */}
+      <div className="flex flex-col gap-1 p-2">
+        <NavItem link={SETTINGS} on={active(SETTINGS.href)} collapsed={collapsed} />
+        <UserCard collapsed={collapsed} />
       </div>
     </aside>
-  );
-}
-
-/** Search + wallet + the one primary action. On small screens it also carries the logo and tabs. */
-/** Where a page sits, for the breadcrumb: its parent, linked when the parent is a page. */
-function parentOf(pathname: string): { label: string; href?: string } | null {
-  if (pathname === "/pay/new") return { label: "Pay" };
-  if (pathname.startsWith("/pay/")) return { label: "History", href: "/history" };
-  if (pathname.startsWith("/lists/")) return { label: "Lists", href: "/lists" };
-  return null;
-}
-
-/**
- * Watches the page's h1 inside the scroll panel and reports when it has scrolled up under the
- * top bar. Pages render their h1 after data loads (and swap it while renaming), so a
- * MutationObserver re-attaches to whichever h1 is current.
- */
-function useScrolledPastTitle(pathname: string) {
-  const [state, setState] = useState({ path: "", title: "", past: false });
-  useEffect(() => {
-    const root = document.getElementById("app-scroll");
-    if (!root) return;
-    let watched: Element | null = null;
-    // The 64px top bar covers the top of the panel; a title under it counts as gone.
-    const io = new IntersectionObserver(
-      ([e]) => setState({ path: pathname, title: e.target.textContent?.trim() ?? "", past: !e.isIntersecting && e.boundingClientRect.top < (e.rootBounds?.top ?? 0) + 64 }),
-      { root, rootMargin: "-64px 0px 0px 0px" },
-    );
-    const attach = () => {
-      const h1 = root.querySelector("main h1");
-      if (h1 === watched) return;
-      if (watched) io.unobserve(watched);
-      watched = h1;
-      if (h1) io.observe(h1);
-    };
-    attach();
-    const mo = new MutationObserver(attach);
-    mo.observe(root, { childList: true, subtree: true });
-    return () => {
-      io.disconnect();
-      mo.disconnect();
-    };
-  }, [pathname]);
-  // Keyed by path so a new page never starts with the last page's crumb showing.
-  return state.path === pathname && state.past ? state.title : null;
-}
-
-/** Appears once the page title scrolls away, so you still know where you are. */
-function Breadcrumb({ pathname }: { pathname: string }) {
-  const title = useScrolledPastTitle(pathname);
-  const parent = parentOf(pathname);
-  return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-16 items-center justify-center md:flex">
-      <AnimatePresence>
-        {title && (
-          <motion.nav
-            key={pathname}
-            aria-label="Breadcrumb"
-            initial={{ opacity: 0, filter: "blur(4px)", transform: "translateY(4px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)", transform: "translateY(0px)" }}
-            exit={{ opacity: 0, filter: "blur(4px)", transform: "translateY(-2px)", transition: { duration: 0.12 } }}
-            transition={{ duration: 0.22, ease: EASE_OUT }}
-            className="pointer-events-auto flex max-w-[min(420px,40vw)] items-center gap-1.5 text-sm"
-          >
-            {parent && (
-              <>
-                {parent.href ? (
-                  <Link href={parent.href} className="shrink-0 text-fg-muted hover:text-fg">
-                    {parent.label}
-                  </Link>
-                ) : (
-                  <span className="shrink-0 text-fg-muted">{parent.label}</span>
-                )}
-                <ChevronRightIcon className="size-3.5 shrink-0 text-fg-subtle" />
-              </>
-            )}
-            <span aria-current="page" className="truncate font-medium text-fg">
-              {title}
-            </span>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-export function AppTopbar() {
-  const active = useActive();
-  const pathname = usePathname();
-  const router = useRouter();
-  const [q, setQ] = useState("");
-
-  // Searches payments by name; History owns the results and filters.
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    const term = q.trim();
-    router.push(term ? `/history?q=${encodeURIComponent(term)}` : "/history");
-  };
-
-  return (
-    // On phones the bar is the navigation, so it's always there. On desktop the sidebar
-    // navigates, so the bar only stays where it does a job: the wallet and the breadcrumb on
-    // the payment and list-detail flows. Home, History and Lists carry their actions in the page header.
-    <header
-      className={cn(
-        "sticky top-0 z-40 shrink-0 bg-bg/85 backdrop-blur-xl",
-        !(pathname.startsWith("/pay") || /^\/lists\/[^/]+/.test(pathname)) && "lg:hidden",
-      )}
-    >
-      <div className="relative flex h-16 items-center gap-3 px-4 sm:px-6 lg:px-8">
-        <Breadcrumb pathname={pathname} />
-        <Link href="/dashboard" className="pressable shrink-0 rounded-md lg:hidden">
-          <Logo mark={false} />
-        </Link>
-
-        {/* Hidden on History, whose own search does the same job. */}
-        <form
-          onSubmit={submit}
-          role="search"
-          className={cn("hidden w-full max-w-[269px]", !pathname.startsWith("/history") && "sm:block")}
-        >
-          <SearchField value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search payments" aria-label="Search payments" />
-        </form>
-
-        <div className="ml-auto flex items-center gap-2">
-          {/* Home has New payment in the page now, so the bar always carries the wallet. */}
-          <WalletButton filled className="h-9" />
-        </div>
-      </div>
-
-      {/* Below lg the sidebar is hidden, so the sections become tabs. */}
-      <nav className="flex gap-1 overflow-x-auto px-4 pb-2 lg:hidden" aria-label="Main">
-        {MOBILE.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap",
-              active(l.href) ? "bg-surface-muted text-fg" : "text-fg-muted",
-            )}
-          >
-            {l.label}
-          </Link>
-        ))}
-      </nav>
-    </header>
   );
 }

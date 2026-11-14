@@ -30,7 +30,7 @@ export function SearchField({
           onKeyDown?.(e);
         }}
         className={cn(
-          "h-10 w-full rounded-full bg-surface-muted pl-10 text-sm outline-none transition-[background-color,box-shadow] duration-150 placeholder:text-fg-subtle focus:bg-surface focus:shadow-[0_0_0_2px_var(--primary)]",
+          "h-10 w-full rounded-full bg-surface-muted pl-10 text-13 outline-none transition-[background-color,box-shadow] duration-150 placeholder:text-fg-subtle focus:bg-surface focus:shadow-[0_0_0_2px_var(--primary)]",
           trailing ? "pr-11" : "pr-4",
         )}
       />

@@ -4,7 +4,11 @@ import { Suspense } from "react";
 
 import { FiltersMenu } from "@/components/history/filters-menu";
 import { NoMatches, NoPaymentsYet } from "@/components/history/history-empty";
-import { HistoryTable, HistoryTableSkeleton } from "@/components/history/history-table";
+import {
+  HistoryTable,
+  HistoryTableEmpty,
+  HistoryTableSkeleton,
+} from "@/components/history/history-table";
 import { StatusTabs } from "@/components/history/status-tabs";
 import { useHistory } from "@/components/history/use-history";
 import { NewPaymentButton } from "@/components/pay/new-payment-button";
@@ -14,7 +18,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Pagination } from "@/components/ui/pagination";
 import { SearchField } from "@/components/ui/search-field";
 import { ErrorState } from "@/components/ui/states";
-import { useLists } from "@/lib/api/queries";
+import { useLists, useSentHistory } from "@/lib/api/queries";
 import { cn } from "@/lib/utils/cn";
 
 export default function HistoryPage() {
@@ -43,12 +47,18 @@ function HistoryContent() {
   // A filter change keeps the old rows (dimmed, with a bar) until the new ones arrive.
   const refreshing = history.isFetching && history.isPlaceholderData;
 
+  // Filters that return nothing on an account with no payments at all still get the
+  // first-payment state, not "nothing matches". Only asked once a filtered view comes back empty.
+  const filteredEmpty = filters.hasFilters && !!history.data && items.length === 0;
+  const anyPayment = useSentHistory({ limit: 1 }, { enabled: filteredEmpty });
+  const neverPaid = anyPayment.data?.pagination.total_items === 0;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:pb-3">
         <StatusTabs value={filters.status} onChange={h.setStatus} />
         {/* pb-3 matches the tabs' underline padding, so both line up on one row. */}
-        <div className="flex items-center gap-2 md:pb-3">
+        <div className="flex items-center gap-2 ">
           <SearchField
             type="search"
             value={h.searchInput}
@@ -79,19 +89,40 @@ function HistoryContent() {
         <HistoryTableSkeleton />
       ) : history.isError && !history.data ? (
         <Card>
-          <ErrorState error={history.error} onRetry={() => history.refetch()} retrying={history.isFetching} />
+          <ErrorState
+            error={history.error}
+            onRetry={() => history.refetch()}
+            retrying={history.isFetching}
+          />
         </Card>
       ) : items.length === 0 ? (
-        <Card>{filters.hasFilters ? <NoMatches onClear={h.clearAll} /> : <NoPaymentsYet />}</Card>
+        <HistoryTableEmpty>
+          {!filters.hasFilters || neverPaid ? (
+            <NoPaymentsYet />
+          ) : anyPayment.isPending ? null : (
+            // Ghost rows alone until we know which message fits, so it doesn't flash.
+            <NoMatches onClear={h.clearAll} />
+          )}
+        </HistoryTableEmpty>
       ) : (
         <>
           {/* A failed refetch: the last good rows stay, with the error above them. */}
           {history.isError && (
-            <ErrorState compact error={history.error} onRetry={() => history.refetch()} retrying={history.isFetching} />
+            <ErrorState
+              compact
+              error={history.error}
+              onRetry={() => history.refetch()}
+              retrying={history.isFetching}
+            />
           )}
           <Card className="relative overflow-hidden" aria-busy={refreshing}>
             <LoadingBar active={refreshing} />
-            <div className={cn("transition-opacity duration-200", refreshing && "opacity-60")}>
+            <div
+              className={cn(
+                "transition-opacity duration-200",
+                refreshing && "opacity-60",
+              )}
+            >
               <HistoryTable items={items} />
             </div>
           </Card>

@@ -35,8 +35,9 @@ export function PayoutView({ payout }: { payout: Payout }) {
 
   return (
     <>
-      <header className="flex flex-col gap-4 pb-8 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
+      <header className="flex flex-col gap-4 pb-10 sm:flex-row sm:items-end sm:justify-between">
+        {/* flex-1: the title takes the room beside the actions, and only truncates when it runs out. */}
+        <div className="min-w-0 flex-1">
           <PayoutName payout={payout} />
           {/* Relative time, since the default name already carries the date; the exact time is on hover. */}
           <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-13 text-fg-muted">
@@ -50,7 +51,7 @@ export function PayoutView({ payout }: { payout: Payout }) {
         </div>
         <div className="flex items-center gap-2">
           {payAgainButton && (
-            <Button asChild variant="outline">
+            <Button asChild variant="filled">
               <Link href={`/pay/new?from=${payout.id}`}>
                 <RepeatIcon className="size-4" /> Pay again
               </Link>

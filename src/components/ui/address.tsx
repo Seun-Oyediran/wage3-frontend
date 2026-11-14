@@ -55,18 +55,21 @@ export function Address({
   chars = 4,
   kind = "address",
   className,
+  textClassName,
   showActions = true,
 }: {
   value: string;
   chars?: number;
   kind?: "address" | "tx";
   className?: string;
+  /** Overrides the address text's size or colour (13px mono, full ink by default). */
+  textClassName?: string;
   /** "hover": copy + explorer appear on row hover or focus (the row needs `group`); always shown on touch screens. */
   showActions?: boolean | "hover";
 }) {
   return (
     <span className={cn("inline-flex items-center gap-0.5", className)}>
-      <span className="font-mono text-13 tabular text-fg" title={value}>
+      <span className={cn("font-mono text-13 tabular text-fg", textClassName)} title={value}>
         {shortAddress(value, chars)}
       </span>
       {showActions && (

@@ -7,13 +7,16 @@ import { toast } from "sonner";
 
 import { BlockedRowsBanner } from "@/components/pay/new/blocked-rows-banner";
 import { PaymentSummary } from "@/components/pay/new/payment-summary";
-import { startingPoint, type StartingPoint } from "@/components/pay/new/starting-point";
+import {
+  startingPoint,
+  type StartingPoint,
+} from "@/components/pay/new/starting-point";
 import { useBlockedRows } from "@/components/pay/new/use-blocked-rows";
 import { RecipientsEditor } from "@/components/recipients/recipients-editor";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field, Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/ui/page-header";
+import { PageHeader, PageHeaderSkeleton } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
 import { useCreatePayout, useList, usePayout } from "@/lib/api/queries";
@@ -46,7 +49,13 @@ function Source() {
       <Card>
         <ErrorState
           error={source.error}
-          title={notFound ? (listId ? "List not found" : "Payment not found") : undefined}
+          title={
+            notFound
+              ? listId
+                ? "List not found"
+                : "Payment not found"
+              : undefined
+          }
           onRetry={notFound ? undefined : () => source.refetch()}
           retrying={source.isFetching}
           action={
@@ -65,7 +74,12 @@ function Source() {
     unpaidOnly,
   });
   // Keyed so switching source remounts with fresh state.
-  return <Composer key={`${listId ?? fromId ?? "new"}-${unpaidOnly}`} start={start} />;
+  return (
+    <Composer
+      key={`${listId ?? fromId ?? "new"}-${unpaidOnly}`}
+      start={start}
+    />
+  );
 }
 
 /**
@@ -88,13 +102,23 @@ function Composer({ start }: { start: StartingPoint }) {
 
   const validation = useMemo(() => validateRows(rows, "payout"), [rows]);
   const blocked = useBlockedRows({ rows, setRows, validation, attempted });
-  const nameError = name.trim().length > LIMITS.nameLength ? `At most ${LIMITS.nameLength} characters` : null;
+  const nameError =
+    name.trim().length > LIMITS.nameLength
+      ? `At most ${LIMITS.nameLength} characters`
+      : null;
 
   const submit = () => {
     setAttempted(true);
-    if (!validation.filledCount) return toast.error("Add at least one person to pay.");
-    if (!validation.isValid) return toast.error(`Fix ${pluralize(validation.invalidCount, "row")} before continuing.`);
-    if (nameError) return toast.error(`Shorten the name to ${LIMITS.nameLength} characters or fewer.`);
+    if (!validation.filledCount)
+      return toast.error("Add at least one person to pay.");
+    if (!validation.isValid)
+      return toast.error(
+        `Fix ${pluralize(validation.invalidCount, "row")} before continuing.`,
+      );
+    if (nameError)
+      return toast.error(
+        `Shorten the name to ${LIMITS.nameLength} characters or fewer.`,
+      );
 
     const started = performance.now();
     setHolding(true);
@@ -108,8 +132,14 @@ function Composer({ start }: { start: StartingPoint }) {
       },
       {
         onSuccess: (payout) => {
-          const wait = Math.max(0, MIN_REVIEW_MS - (performance.now() - started));
-          redirect.current = setTimeout(() => router.push(`/pay/${payout.id}`), wait);
+          const wait = Math.max(
+            0,
+            MIN_REVIEW_MS - (performance.now() - started),
+          );
+          redirect.current = setTimeout(
+            () => router.push(`/pay/${payout.id}`),
+            wait,
+          );
         },
         onError: () => setHolding(false),
       },
@@ -120,11 +150,16 @@ function Composer({ start }: { start: StartingPoint }) {
     <>
       <PageHeader
         title="New payment"
-        description={start.origin ?? "Add who you're paying and how much. You'll review it all before anything is sent."}
+        className="pb-22"
+        description={
+          start.origin ??
+          "Add who you're paying and how much. You'll review it all before anything is sent."
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-        <Card className="p-5">
+        {/* No card around the left side: the table has its own, and the rest sits on the page. */}
+        <div className="flex min-w-0 flex-col gap-6">
           {blocked.count > 0 && (
             <BlockedRowsBanner
               count={blocked.count}
@@ -140,21 +175,27 @@ function Composer({ start }: { start: StartingPoint }) {
             // Showing the blocked rows also shows their faults, without waiting for a Review attempt.
             showAllErrors={attempted || !!blocked.showOnly}
             only={blocked.showOnly}
-            flush
           />
-          <div className="pt-5">
-            <Field label="Name (optional)" htmlFor="payout-name" hint="Shown in your history. Leave blank for today's date." error={nameError}>
+          <div>
+            <Field
+              label="Name (optional)"
+              htmlFor="payout-name"
+              hint="Shown in your history. Leave blank for today's date."
+              error={nameError}
+            >
               <Input
                 id="payout-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={`Payment ${formatDate(new Date())}`}
                 invalid={!!nameError}
+                className="h-10 px-3 text-13"
               />
             </Field>
           </div>
-        </Card>
+        </div>
 
+        {/* Level with the slot above the table: the CSV hint while empty, the tools after. */}
         <aside className="lg:sticky lg:top-24">
           <PaymentSummary
             total={blocked.payableTotal}
@@ -171,14 +212,34 @@ function Composer({ start }: { start: StartingPoint }) {
   );
 }
 
+/** The composer's real footprint: header, toolbar, the table with a row, the name field, and the summary card. */
 function ComposerSkeleton() {
   return (
     <div aria-busy>
-      <Skeleton className="h-8 w-56" />
-      <Skeleton className="mt-2 h-5 w-96 max-w-full" />
-      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <Skeleton className="h-96 rounded-2xl" />
-        <Skeleton className="h-96 rounded-2xl" />
+      <PageHeaderSkeleton className="pb-22" />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="flex min-w-0 flex-col gap-6">
+          <div>
+            <Skeleton className="mb-4 h-12 rounded-xl" />
+            <Card className="overflow-hidden">
+              <div className="h-9.5 bg-surface-sunken" />
+              <div className="flex h-12 items-center gap-6 px-5">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="ml-auto h-3.5 w-16" />
+              </div>
+              <div className="h-11" />
+            </Card>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex h-5 items-center">
+              <Skeleton className="h-3.5 w-28" />
+            </div>
+            <Skeleton className="h-10 rounded-xl" />
+            <Skeleton className="mt-1 h-3.5 w-64" />
+          </div>
+        </div>
+        <Skeleton className="h-74 rounded-2xl" />
       </div>
     </div>
   );

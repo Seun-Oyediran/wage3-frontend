@@ -23,7 +23,7 @@ export function PayoutMenu({ payout, payAgainInMenu, onSaveAsList }: { payout: P
   return (
     <DropdownMenu>
       <DropdownTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="More actions">
+        <Button variant="filled" size="icon" aria-label="More actions">
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownTrigger>

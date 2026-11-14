@@ -52,3 +52,5 @@ Thumbs.db
 
 # Commercial font (Monument Grotesk): kept local until there is a web licence
 public/fonts/*.otf
+
+/Screenshots

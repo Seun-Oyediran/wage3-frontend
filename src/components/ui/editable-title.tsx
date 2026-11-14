@@ -88,7 +88,7 @@ export function EditableTitle({
               setError(null);
             }
           }}
-          className="headline -mx-2 w-full max-w-xl font-normal rounded-xl border border-primary bg-surface px-2 py-1 text-28 outline-none shadow-[0_0_0_3px_color-mix(in_oklch,var(--primary)_18%,transparent)] aria-invalid:border-danger"
+          className="headline -mx-2 w-full max-w-xl font-normal rounded-xl border border-primary bg-surface px-2 py-1 text-26 outline-none shadow-[0_0_0_3px_color-mix(in_oklch,var(--primary)_18%,transparent)] aria-invalid:border-danger"
         />
         {error && <p className="mt-1.5 text-13 text-danger-fg">{error}</p>}
       </div>
@@ -102,7 +102,7 @@ export function EditableTitle({
       className="group -mx-2 flex max-w-full items-center gap-2 rounded-xl px-2 py-1 text-left transition-colors duration-150 hover:bg-surface-hover"
       aria-label={`Rename ${value}`}
     >
-      <h1 className="headline truncate text-28 font-normal">{value}</h1>
+      <h1 className="headline truncate text-26 font-normal">{value}</h1>
       <Pencil className="size-4 shrink-0 text-fg-subtle opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100" />
     </button>
   );

@@ -30,10 +30,10 @@ export function Pagination({
         <span className="text-13 text-fg-muted tabular">
           Page {page} of {totalPages}
         </span>
-        <Button variant="outline" size="icon-sm" aria-label="Previous page" disabled={!hasPrev || disabled} onClick={() => onPage(page - 1)}>
+        <Button variant="filled" size="icon-sm" aria-label="Previous page" disabled={!hasPrev || disabled} onClick={() => onPage(page - 1)}>
           <ChevronLeftIcon className="size-4" />
         </Button>
-        <Button variant="outline" size="icon-sm" aria-label="Next page" disabled={!hasNext || disabled} onClick={() => onPage(page + 1)}>
+        <Button variant="filled" size="icon-sm" aria-label="Next page" disabled={!hasNext || disabled} onClick={() => onPage(page + 1)}>
           <ChevronRightIcon className="size-4" />
         </Button>
       </div>
