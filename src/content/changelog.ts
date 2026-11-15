@@ -36,8 +36,22 @@ export type ChangelogEntry = {
 // Roles are a first guess; edit to taste.
 const JASON: ChangelogAuthor = { name: "Jason Udi", role: "Design Engineer", github: "Krsawa", signature: KUROSAWA_SIGNATURE };
 const SEUN: ChangelogAuthor = { name: "Seun Oyediran", role: "Engineering", github: "Seun-Oyediran" };
+const OLADEJI: ChangelogAuthor = { name: "Oladeji Raji", role: "Design Engineer", github: "Oladejiraji" };
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    slug: "steadier-wage3",
+    date: "2026-11-14",
+    title: "A calmer, steadier Wage3",
+    authors: [OLADEJI],
+    body: [
+      "The sidebar now runs the full height of the page and folds down to icons with ⌘\\ (Ctrl+\\ on Windows). Your wallet sits in a new header that’s on every page, next to a search box that will soon reach across payments, lists and people.",
+      "Pages no longer jump while they load. Your wallet shows a placeholder while it reconnects instead of flashing Connect wallet, and every loading state is the same shape as the page it becomes.",
+      "New payment is easier to fill in. The table stands on its own, the CSV drop spot turns into Same amount and Split total once you start typing, and an imported file has every problem flagged at once rather than a few at a time. Empty emails are no longer highlighted, since they never stop anyone being paid.",
+      "History, Lists and payment pages have lighter tables and new empty states. Smaller fixes: pasting respects the 1,000-person limit and works in the Amount column, filtered tables show past 100 rows, leaving during review no longer pulls you back, and buttons you can’t use yet tell you why.",
+    ],
+    prs: [5, 6],
+  },
   {
     slug: "simpler-log-in",
     date: "2026-11-02",
