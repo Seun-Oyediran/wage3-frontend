@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { DashIcon } from "@/components/ui/icons";
 import { chain, LIMITS, USDC } from "@/lib/config";
+import { EASE_OUT } from "@/lib/motion";
 
 const TITLES = ["Use a dedicated wallet", "Add funds", "How a payment works"];
 
@@ -92,7 +93,7 @@ export function WalletWalkthrough({
       {/* One step at a time; the dialog's height eases to each step's content (measured), and the
           old step pops out while the new one blurs and scales in, so the size never snaps. */}
       <div
-        className="overflow-hidden transition-[height] duration-[280ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="overflow-hidden transition-[height] duration-[280ms] ease-(--ease-out) motion-reduce:transition-none"
         style={{ height: contentHeight ?? "auto" }}
       >
         <div ref={contentRef} className="relative">
@@ -103,7 +104,7 @@ export function WalletWalkthrough({
                 initial={{ opacity: 0, transform: "scale(0.97)", filter: "blur(6px)" }}
                 animate={{ opacity: 1, transform: "scale(1)", filter: "blur(0px)" }}
                 exit={{ opacity: 0, transform: "scale(0.97)", filter: "blur(6px)", transition: { duration: 0.14 } }}
-                transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
+                transition={{ duration: 0.22, ease: EASE_OUT }}
               >
                 {i === 0 && (
                   // One safety message, for any wallet app: a new wallet that only does payroll.

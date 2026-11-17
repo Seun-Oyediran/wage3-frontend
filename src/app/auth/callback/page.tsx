@@ -34,7 +34,7 @@ function Loading() {
   return (
     <div role="status" className="flex flex-col items-center py-16 text-center">
       <Spinner className="size-6 text-primary" />
-      <p className="mt-4 text-[15px] text-fg-muted">Logging you in…</p>
+      <p className="mt-4 text-15 text-fg-muted">Logging you in…</p>
     </div>
   );
 }

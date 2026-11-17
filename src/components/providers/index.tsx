@@ -12,6 +12,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ApiError, toApiError } from "@/lib/api/client";
 import { wagmiConfig } from "@/lib/wagmi";
+import { EASE_OUT } from "@/lib/motion";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -60,7 +61,7 @@ export function Providers({ children }: { children: ReactNode }) {
     <JotaiProvider store={getDefaultStore()}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <MotionConfig reducedMotion="user" transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}>
+          <MotionConfig reducedMotion="user" transition={{ duration: 0.2, ease: EASE_OUT }}>
             {/* Every tooltip waits 400ms, even right after another one closes (no skip window). */}
             <TooltipProvider delayDuration={400} skipDelayDuration={0}>
               {children}

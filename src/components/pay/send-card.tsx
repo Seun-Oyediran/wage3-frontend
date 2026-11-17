@@ -4,21 +4,23 @@ import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 import { useBalance, useConnection, useSwitchChain } from "wagmi";
 
+import { PermissionsRow, SummaryList, SummaryRow, SummaryTotal } from "@/components/pay/summary";
 import { usePaymentsPaused } from "@/components/shell/status-banner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { InfoTip, Tooltip } from "@/components/ui/tooltip";
+import { NetworkBadge } from "@/components/ui/network-badge";
+import { ReasonTooltip } from "@/components/ui/tooltip";
 import { ConnectDialog } from "@/components/wallet/connect-dialog";
-import { useUsdcBalance } from "@/components/wallet/wallet-button";
+import { useUsdcBalance } from "@/hooks/use-usdc-balance";
 import { CheckIcon, ExternalIcon, LockIcon, PaperPlaneIcon, ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
 import type { Payout } from "@/lib/api/types";
 import { chain, LIMITS, txUrl, USDC } from "@/lib/config";
-import { cn } from "@/lib/cn";
-import { formatAmount, formatFigure, parseAmount, pluralize, shortAddress } from "@/lib/format";
-import { NO_GAS_MESSAGE, type SendState } from "@/lib/send-payout";
+import { cn } from "@/lib/utils/cn";
+import { formatAmount, parseAmount, pluralize, shortAddress } from "@/lib/utils/format";
+import { batchCount, NO_GAS_MESSAGE, type SendState } from "@/lib/send-payout";
 import { DISPLAY_FIGURE } from "@/lib/type";
 
 type StepStatus = "todo" | "active" | "done" | "error";
@@ -60,8 +62,8 @@ export function SendCard({
 
   const remaining = payout.batches.filter((b) => b.status === "ready");
   const remainingTotal = payout.status === "draft" ? total : remaining.reduce((a, b) => a + BigInt(b.total_amount), BigInt(0));
-  const batchCount = payout.status === "draft" ? Math.max(1, Math.ceil(count / LIMITS.batchSize)) : payout.batch_count;
-  const signatures = (payout.status === "draft" ? batchCount : remaining.length) + 1; // + approval, at most
+  const batches = payout.status === "draft" ? batchCount(count) : payout.batch_count;
+  const signatures = (payout.status === "draft" ? batches : remaining.length) + 1; // + approval, at most
 
   const wrongWallet =
     !!payout.sender_address && !!address && payout.sender_address.toLowerCase() !== address.toLowerCase();
@@ -72,7 +74,14 @@ export function SendCard({
   const started = state.step !== "idle";
   const needsTyping = requireTypedTotal && payout.status === "draft" && !started;
   const blockedReason =
-    disabledReason ?? (short ? `Not enough ${USDC.symbol} in this wallet.` : noGas ? NO_GAS_MESSAGE : null);
+    disabledReason ??
+    (count === 0
+      ? "Add at least one person first"
+      : short
+        ? `Not enough ${USDC.symbol} in this wallet.`
+        : noGas
+          ? NO_GAS_MESSAGE
+          : null);
 
   const steps: { key: string; label: ReactNode; detail?: ReactNode; status: StepStatus; icon: ReactNode }[] = [
     {
@@ -111,15 +120,15 @@ export function SendCard({
       label:
         state.batchTotal > 1 && state.step === "sending"
           ? `Send batch ${state.batchIndex + 1} of ${state.batchTotal}`
-          : batchCount > 1
-            ? `Send ${batchCount} batches`
+          : batches > 1
+            ? `Send ${batches} batches`
             : "Send",
       detail:
         state.step === "sending"
           ? state.phase === "sign"
             ? "Confirm in your wallet"
             : "Waiting for Base…"
-          : batchCount > 1
+          : batches > 1
             ? `Up to ${LIMITS.batchSize} people per transaction`
             : "One transaction for everyone",
       icon: <PaperPlaneIcon className="size-3.5" />,
@@ -163,20 +172,18 @@ export function SendCard({
     action = (
       <>
         {/* Why sending is blocked (no USDC, no gas, rows to fix) lives in the button's tooltip. */}
-        <Tooltip content={blockedReason}>
-          <span tabIndex={blockedReason ? 0 : -1} className="block rounded-full">
-            <Button
-              size="lg"
-              className="w-full"
-              // A large payment asks for the total in a dialog first; sending starts once it matches.
-              onClick={state.step === "error" ? onRetry : needsTyping ? () => setConfirmOpen(true) : onSend}
-              loading={busy}
-              disabled={!!blockedReason || count === 0}
-            >
-              {state.step === "error" ? "Try again" : started && payout.status !== "draft" ? "Continue sending" : sendLabel}
-            </Button>
-          </span>
-        </Tooltip>
+        <ReasonTooltip reason={blockedReason} block>
+          <Button
+            size="lg"
+            className="w-full"
+            // A large payment asks for the total in a dialog first; sending starts once it matches.
+            onClick={state.step === "error" ? onRetry : needsTyping ? () => setConfirmOpen(true) : onSend}
+            loading={busy}
+            disabled={!!blockedReason}
+          >
+            {state.step === "error" ? "Try again" : started && payout.status !== "draft" ? "Continue sending" : sendLabel}
+          </Button>
+        </ReasonTooltip>
         <ConfirmTotalDialog
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
@@ -194,34 +201,26 @@ export function SendCard({
   return (
     <Card className="overflow-hidden">
       <div className="p-5">
-        <div className="text-[13px] font-medium text-fg-muted">{payout.status === "draft" ? "You're sending" : "Left to send"}</div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className={cn(DISPLAY_FIGURE, "text-[24px]")} title={`${formatAmount(remainingTotal)} ${USDC.symbol}`}>{formatFigure(remainingTotal)}</span>
-          <span className="text-sm text-fg-muted">{USDC.symbol}</span>
-        </div>
-        {/* Same rows as the New payment summary: label left, value right. */}
-        <dl className="mt-5 flex flex-col gap-2.5 text-[13px]">
-          <Meta label="Recipients">{pluralize(count, "person", "people")}</Meta>
-          <Meta label="Permissions required" info={<WalletPromptsInfo />}>Up to {signatures}</Meta>
-          <Meta label="Network">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="size-2.5 rounded-[3px] bg-base-blue" />
-              {chain.name}
-            </span>
-          </Meta>
+        <SummaryTotal label={payout.status === "draft" ? "You're sending" : "Left to send"} amount={remainingTotal} />
+        <SummaryList>
+          <SummaryRow label="Recipients">{pluralize(count, "person", "people")}</SummaryRow>
+          <PermissionsRow prompts={signatures} />
+          <SummaryRow label="Network">
+            <NetworkBadge />
+          </SummaryRow>
           {/* Only once there's a wallet to read: a bare dash beside the label says nothing. */}
           {isConnected && (
-            <Meta label="Your balance">
+            <SummaryRow label="Your balance">
               {balance.isLoading ? (
                 <span className="text-fg-subtle">…</span>
               ) : (
-                <span className={cn("tabular", short && "text-danger-fg")}>
+                <span className={cn(short && "text-danger-fg")}>
                   {formatAmount(balance.data ?? BigInt(0))} {USDC.symbol}
                 </span>
               )}
-            </Meta>
+            </SummaryRow>
           )}
-        </dl>
+        </SummaryList>
       </div>
 
       <ol className="px-5 pb-5">
@@ -258,18 +257,6 @@ export function SendCard({
         </div>
       </div>
     </Card>
-  );
-}
-
-function Meta({ label, info, children }: { label: string; info?: ReactNode; children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3">
-      <dt className="flex items-center gap-1 text-fg-subtle">
-        {label}
-        {info && <InfoTip label={label} align="start">{info}</InfoTip>}
-      </dt>
-      <dd className="font-medium">{children}</dd>
-    </div>
   );
 }
 
@@ -317,7 +304,7 @@ function Step({ label, detail, status, icon, last }: { label: ReactNode; detail?
       </span>
       <div className="min-w-0 pt-0.5">
         <div className={cn("text-sm font-medium", status === "todo" && "text-fg-muted")}>{label}</div>
-        {detail && <div className="mt-0.5 text-[13px] text-fg-subtle">{detail}</div>}
+        {detail && <div className="mt-0.5 text-13 text-fg-subtle">{detail}</div>}
       </div>
     </li>
   );
@@ -328,23 +315,13 @@ function Notice({ tone, children }: { tone: "warning" | "danger"; children: Reac
     <div
       role={tone === "danger" ? "alert" : "status"}
       className={cn(
-        "flex gap-2.5 rounded-xl px-3.5 py-3 text-[13px] text-pretty",
+        "flex gap-2.5 rounded-xl px-3.5 py-3 text-13 text-pretty",
         tone === "warning" ? "bg-warning-soft text-warning-fg" : "bg-danger-soft text-danger-fg",
       )}
     >
       <WarningIcon className="mt-px size-4 shrink-0" />
       <div>{children}</div>
     </div>
-  );
-}
-
-/** What "Permissions required" counts. Shared with the New payment summary. */
-export function WalletPromptsInfo() {
-  return (
-    <>
-      One to confirm the exact {USDC.symbol} total, then one per transaction of up to {LIMITS.batchSize} people. Your
-      wallet asks you to approve each.
-    </>
   );
 }
 
@@ -393,12 +370,12 @@ export function ConfirmTotalDialog({
         {/* 24px from the description (heading → content), then the figure on whole-pixel lines:
             13/20 label, 22/28 figure, 13/20 who. */}
         <div className="mt-1 rounded-xl bg-surface-muted px-4 py-3">
-          <div className="text-[13px] leading-5 text-fg-muted">You&apos;re sending</div>
+          <div className="text-13 leading-5 text-fg-muted">You&apos;re sending</div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className={cn(DISPLAY_FIGURE, "min-w-0 text-[22px] [line-height:28px] break-all")}>{formatAmount(total)}</span>
+            <span className={cn(DISPLAY_FIGURE, "min-w-0 text-22 [line-height:28px] break-all")}>{formatAmount(total)}</span>
             <span className="text-sm text-fg-muted">{USDC.symbol}</span>
           </div>
-          <div className="text-[13px] leading-5 text-fg-muted">to {pluralize(count, "person", "people")}</div>
+          <div className="text-13 leading-5 text-fg-muted">to {pluralize(count, "person", "people")}</div>
         </div>
         <div className="mt-4">
           <Field label="Type the total" htmlFor="confirm-total" error={wrong ? "That doesn't match the total" : null}>

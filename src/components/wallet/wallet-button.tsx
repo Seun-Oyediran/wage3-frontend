@@ -2,7 +2,7 @@
 
 import { LogOut } from "lucide-react";
 import { useState } from "react";
-import { useConnection, useDisconnect, useReadContract, useSwitchChain } from "wagmi";
+import { useConnection, useDisconnect, useSwitchChain } from "wagmi";
 
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/ui/address";
@@ -14,30 +14,16 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from "@/components/ui/dropdown";
+import { WarningIcon } from "@/components/ui/icons";
+import { NetworkBadge } from "@/components/ui/network-badge";
 import { useHydrated } from "@/lib/auth/use-session";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 import { chain, USDC } from "@/lib/config";
-import { erc20Abi } from "@/lib/contracts";
-import { formatAmount, shortAddress } from "@/lib/format";
+import { useUsdcBalance } from "@/hooks/use-usdc-balance";
+import { useWalletRestoring } from "@/lib/wagmi";
+import { formatAmount, shortAddress } from "@/lib/utils/format";
 
 import { ConnectDialog } from "./connect-dialog";
-import { WarningIcon } from "@/components/ui/icons";
-
-export function useUsdcBalance() {
-  const { address } = useConnection();
-  return useReadContract({
-    address: USDC.address,
-    abi: erc20Abi,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    chainId: chain.id,
-    query: { enabled: !!address, refetchInterval: 15_000 },
-  });
-}
-
-// `filled` (top bar): borderless grey fill to match the search field, and no icon on
-// "Connect wallet" so it reads as a quiet secondary action.
-const FILLED = "border-0 bg-surface-muted hover:bg-(--color-50)";
 
 export function WalletButton({
   size = "sm",
@@ -49,20 +35,20 @@ export function WalletButton({
   filled?: boolean;
 }) {
   const hydrated = useHydrated();
+  const restoring = useWalletRestoring();
   const { address, isConnected, chainId, isReconnecting } = useConnection();
-  const { disconnect } = useDisconnect();
   const { switchChain, isPending: switching } = useSwitchChain();
   const [open, setOpen] = useState(false);
-  const balance = useUsdcBalance();
 
-  if (!hydrated || isReconnecting) {
+  // Until we know whether a wallet is coming back, a placeholder rather than a flash of "Connect wallet".
+  if (!hydrated || restoring || isReconnecting) {
     return <div className={cn("h-8 w-32 rounded-full bg-surface-muted", className)} aria-hidden />;
   }
 
   if (!isConnected || !address) {
     return (
       <>
-        <Button variant="outline" size={size} className={cn(filled && FILLED, className)} onClick={() => setOpen(true)}>
+        <Button variant={filled ? "filled" : "outline"} size={size} className={className} onClick={() => setOpen(true)}>
           Connect wallet
         </Button>
         <ConnectDialog open={open} onOpenChange={setOpen} />
@@ -87,42 +73,49 @@ export function WalletButton({
   return (
     <DropdownMenu>
       <DropdownTrigger asChild>
-        <Button variant="outline" size={size} className={cn("gap-2 pl-1.5", filled && FILLED, className)}>
+        <Button variant={filled ? "filled" : "outline"} size={size} className={cn("gap-2 pl-1.5", className)}>
           <WalletAvatar address={address} className="size-6" />
-          <span className="text-[13px] tabular">{shortAddress(address)}</span>
+          <span className="text-13 tabular">{shortAddress(address)}</span>
         </Button>
       </DropdownTrigger>
-      {/* After Aave's wallet menu: the wallet as a row you're "in", account facts as label/value rows, then Disconnect. */}
-      <DropdownContent className="w-64">
-        <DropdownLabel>Your wallet</DropdownLabel>
-        <div className="flex h-[34px] items-center gap-2.5 px-2.5">
-          <WalletAvatar address={address} className="size-5" />
-          <span className="flex-1 text-sm tabular">{shortAddress(address)}</span>
-          <CopyButton value={address} label="Copy address" className="-mr-1" />
-        </div>
-        <DropdownSeparator />
-        <dl className="flex flex-col text-sm">
-          <div className="flex h-[34px] items-center justify-between gap-3 px-2.5">
-            <dt className="text-fg-muted">Balance</dt>
-            <dd className="tabular">
-              {balance.isLoading ? "…" : balance.data !== undefined ? formatAmount(balance.data) : "—"}{" "}
-              <span className="text-fg-muted">{USDC.symbol}</span>
-            </dd>
-          </div>
-          <div className="flex h-[34px] items-center justify-between gap-3 px-2.5">
-            <dt className="text-fg-muted">Network</dt>
-            <dd className="inline-flex items-center gap-1.5">
-              <span className="size-2.5 rounded-[3px] bg-base-blue" />
-              {chain.name}
-            </dd>
-          </div>
-        </dl>
-        <DropdownSeparator />
-        <DropdownItem icon={<LogOut />} onSelect={() => disconnect()}>
-          Disconnect
-        </DropdownItem>
-      </DropdownContent>
+      <WalletMenu address={address} />
     </DropdownMenu>
+  );
+}
+
+/** After Aave's wallet menu: the wallet as a row you're "in", account facts as label/value rows, then Disconnect. */
+function WalletMenu({ address }: { address: string }) {
+  const { disconnect } = useDisconnect();
+  const balance = useUsdcBalance();
+  return (
+    <DropdownContent className="w-64">
+      <DropdownLabel>Your wallet</DropdownLabel>
+      <div className="flex h-7.5 items-center gap-2 px-2">
+        <WalletAvatar address={address} className="size-5" />
+        <span className="flex-1 text-13 tabular">{shortAddress(address)}</span>
+        <CopyButton value={address} label="Copy address" copiedMessage="Address copied" className="-mr-1" />
+      </div>
+      <DropdownSeparator />
+      <dl className="flex flex-col text-13">
+        <div className="flex h-7.5 items-center justify-between gap-3 px-2">
+          <dt className="text-fg-muted">Balance</dt>
+          <dd className="tabular">
+            {balance.isLoading ? "…" : balance.data !== undefined ? formatAmount(balance.data) : "—"}{" "}
+            <span className="text-fg-muted">{USDC.symbol}</span>
+          </dd>
+        </div>
+        <div className="flex h-7.5 items-center justify-between gap-3 px-2">
+          <dt className="text-fg-muted">Network</dt>
+          <dd>
+            <NetworkBadge />
+          </dd>
+        </div>
+      </dl>
+      <DropdownSeparator />
+      <DropdownItem icon={<LogOut />} onSelect={() => disconnect()}>
+        Disconnect
+      </DropdownItem>
+    </DropdownContent>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
+import { EASE_OUT } from "@/lib/motion";
 
 /**
  * Route change: a quick fade so content doesn't teleport. Opacity only: the sidebar pill is
@@ -9,7 +10,7 @@ import type { ReactNode } from "react";
  */
 export default function Template({ children }: { children: ReactNode }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: [0.23, 1, 0.32, 1] }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15, ease: EASE_OUT }}>
       {children}
     </motion.div>
   );

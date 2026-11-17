@@ -3,7 +3,7 @@
 import { useEffect, useRef, type InputHTMLAttributes, type MouseEvent } from "react";
 
 import { CheckIcon, DeleteIcon, WarningIcon } from "@/components/ui/icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 // Blue 9 (white tick 3.54:1, above the 3:1 for controls), blue 10 under the pointer.
 const ON = "border-(--blue-9) bg-(--blue-9) hover:border-(--blue-10) hover:bg-(--blue-10)";

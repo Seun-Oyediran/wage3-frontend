@@ -9,7 +9,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/input";
 import { useSaveAsList } from "@/lib/api/queries";
 import type { Payout } from "@/lib/api/types";
-import { pluralize } from "@/lib/format";
+import { pluralize } from "@/lib/utils/format";
 
 export function SaveAsListDialog({ payout, open, onOpenChange }: { payout: Payout; open: boolean; onOpenChange: (o: boolean) => void }) {
   const router = useRouter();
@@ -59,7 +59,7 @@ export function SaveAsListDialog({ payout, open, onOpenChange }: { payout: Payou
           />
         </Field>
         {unique < payout.items.length && (
-          <p className="mt-3 text-[13px] text-fg-muted">
+          <p className="mt-3 text-13 text-fg-muted">
             Wallets paid more than once are kept once, with their first amount.
           </p>
         )}

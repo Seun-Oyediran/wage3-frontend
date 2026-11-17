@@ -1,10 +1,10 @@
 import { forwardRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react";
 
 import { ResizeIcon } from "@/components/ui/icons";
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 const base =
-  "w-full rounded-xl border border-border-subtle bg-surface px-3.5 text-[15px] text-fg placeholder:text-fg-subtle " +
+  "w-full rounded-xl border border-border-subtle bg-surface px-3.5 text-15 text-fg placeholder:text-fg-subtle " +
   "transition-[border-color,box-shadow] duration-150 outline-none " +
   "hover:border-border focus:border-primary focus:shadow-[0_0_0_3px_color-mix(in_oklch,var(--primary)_18%,transparent)] " +
   "disabled:cursor-not-allowed disabled:opacity-50 " +
@@ -73,17 +73,17 @@ export function Field({
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
       {label && (
-        <label htmlFor={htmlFor} className="text-[13px] leading-5 font-medium text-fg">
+        <label htmlFor={htmlFor} className="text-13 leading-5 font-medium text-fg">
           {label}
         </label>
       )}
       {children}
       {error ? (
-        <p role="alert" className="text-[13px] leading-5 text-danger-fg">
+        <p role="alert" className="text-13 leading-5 text-danger-fg">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-[13px] text-fg-subtle">{hint}</p>
+        <p className="text-13 text-fg-subtle">{hint}</p>
       ) : null}
     </div>
   );

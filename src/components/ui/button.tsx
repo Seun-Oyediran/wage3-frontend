@@ -4,24 +4,28 @@ import { Slot } from "radix-ui";
 import { AnimatePresence, motion } from "motion/react";
 import { forwardRef, type ButtonHTMLAttributes } from "react";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
+import { EASE_OUT } from "@/lib/motion";
 
 import { Spinner } from "./spinner";
 
 const variants = {
   // Base Blue: one per screen, the action that matters most.
+  // Disabled fades (the shared 45% below) rather than turning grey, so it reads as the same action, not ready yet.
   primary: "bg-primary text-primary-fg hover:bg-primary-hover",
   inverse: "bg-inverse text-inverse-fg hover:bg-[oklch(0.3_0_0)]",
   secondary: "bg-surface-muted text-fg hover:bg-border",
   outline: "border border-border-subtle bg-surface text-fg hover:border-border hover:bg-surface-hover",
+  // Grey fill, no border: the search field's look, for the controls that sit beside it.
+  filled: "bg-surface-muted text-fg hover:bg-(--color-50)",
   ghost: "text-fg-muted hover:text-fg hover:bg-surface-hover",
   danger: "bg-danger-soft text-danger-fg hover:bg-danger hover:text-white",
 } as const;
 
 const sizes = {
-  sm: "h-8 px-3 text-[13px] gap-1.5",
+  sm: "h-8 px-3 text-13 gap-1.5",
   md: "h-10 px-4 text-sm gap-2",
-  lg: "h-12 px-6 text-[15px] font-semibold gap-2",
+  lg: "h-12 px-6 text-15 font-semibold gap-2",
   icon: "size-9",
   "icon-sm": "size-8",
 } as const;
@@ -81,7 +85,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
                 opacity: { duration: 0.2, delay: 0.12, times: [0, 0, 1], ease: "easeOut" },
                 filter: { duration: 0.2, delay: 0.12, times: [0, 0, 1], ease: "easeOut" },
               }
-            : { duration: 0.24, ease: [0.23, 1, 0.32, 1] }
+            : { duration: 0.24, ease: EASE_OUT }
         }
       >
         {children}

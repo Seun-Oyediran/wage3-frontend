@@ -1,4 +1,4 @@
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
 
 /** Spins fast on purpose: a quick spinner makes waits feel shorter. */
 export function Spinner({ className }: { className?: string }) {

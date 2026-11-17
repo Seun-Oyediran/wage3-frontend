@@ -3,6 +3,7 @@ import { formatUnits } from "viem";
 import type { Payout } from "@/lib/api/types";
 import { txUrl, USDC } from "@/lib/config";
 import { readCompany } from "@/lib/local-prefs";
+import { downloadFile } from "@/lib/utils/download";
 
 const cell = (v: string | null | undefined) => {
   const s = v ?? "";
@@ -37,8 +38,5 @@ export function payoutCsv(payout: Payout) {
 export function downloadPayoutCsv(payout: Payout) {
   const date = (payout.paid_at ?? payout.created_at).slice(0, 10);
   const slug = (payout.name || "payment").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  const url = URL.createObjectURL(new Blob([payoutCsv(payout)], { type: "text/csv;charset=utf-8" }));
-  const a = Object.assign(document.createElement("a"), { href: url, download: `wage3-${slug}-${date}.csv` });
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadFile(`wage3-${slug}-${date}.csv`, payoutCsv(payout));
 }

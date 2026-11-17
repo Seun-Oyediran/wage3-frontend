@@ -4,6 +4,8 @@ import { Info } from "lucide-react";
 import { Tooltip as T } from "radix-ui";
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils/cn";
+
 export const TooltipProvider = T.Provider;
 
 /*
@@ -34,12 +36,27 @@ export function Tooltip({
           side={side}
           align={align}
           sideOffset={6}
-          className="z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-[10px] bg-(--color-950) px-2.5 py-1 text-[13px] leading-5 font-medium tracking-[-0.0046em] text-white shadow-[0_0_0_0.5px_oklch(0_0_0/0.059),0_1px_1px_-1px_oklch(0_0_0/0.102),0_1px_2px_0_oklch(0_0_0/0.051)] data-[state=closed]:animate-tip-out data-[state=delayed-open]:animate-tip-in data-[state=instant-open]:animate-none motion-reduce:data-[state=delayed-open]:animate-none"
+          className="z-50 inline-flex w-fit max-w-xs origin-(--radix-tooltip-content-transform-origin) items-center gap-1.5 rounded-[10px] bg-(--color-950) px-2.5 py-1 text-13 leading-5 font-medium tracking-[-0.0046em] text-white shadow-[0_0_0_0.5px_oklch(0_0_0/0.059),0_1px_1px_-1px_oklch(0_0_0/0.102),0_1px_2px_0_oklch(0_0_0/0.051)] data-[state=closed]:animate-tip-out data-[state=delayed-open]:animate-tip-in data-[state=instant-open]:animate-none motion-reduce:data-[state=delayed-open]:animate-none"
         >
           {content}
         </T.Content>
       </T.Portal>
     </T.Root>
+  );
+}
+
+/**
+ * A button that's disabled for a reason, with the reason on hover and keyboard focus. Disabled
+ * buttons get no pointer or focus events, so a focusable wrapper holds the tooltip. `block` for
+ * a full-width button.
+ */
+export function ReasonTooltip({ reason, block, children }: { reason: string | null | undefined; block?: boolean; children: ReactNode }) {
+  return (
+    <Tooltip content={reason}>
+      <span tabIndex={reason ? 0 : -1} className={cn("rounded-full", block && "block")}>
+        {children}
+      </span>
+    </Tooltip>
   );
 }
 

@@ -9,6 +9,12 @@
 @font-face { font-family: "Monument Grotesk"; src: url("/fonts/MonumentGrotesk-Bold.otf") format("opentype"); font-weight: 700; font-style: normal; font-display: swap; }
 
 /*
+ * The collapsed desktop sidebar, keyed to <html data-sidebar="collapsed">. A script in
+ * app/layout.tsx sets it before first paint, so collapsed styles apply from the start.
+ */
+@custom-variant collapsed (&:where([data-sidebar="collapsed"] *));
+
+/*
  * Base brand tokens (brand.base.org). Grayscale and white space lead;
  * Base Blue is reserved for the single most important element on screen.
  * Secondary colors only for status, never as heroes. No gradients.
@@ -52,6 +58,10 @@
   /* Softer edge for controls (inputs, outline buttons, date fields); cards and dividers keep --border. */
   --border-subtle: var(--color-50);
   --border-strong: var(--color-700);
+  /* Translucent rule between page sections and figures: lighter than --border, right on any surface. */
+  --hairline: oklch(0 0 0 / 0.08);
+  /* Desktop sidebar width: 0 on pages without one (rules below). Fixed toasts centre past it. */
+  --sidebar-w: 0px;
   --fg: var(--gray-100);
   --fg-muted: var(--gray-60);
   --fg-subtle: var(--color-950);
@@ -185,6 +195,22 @@
 }
 
 @theme inline {
+  /* The app's font sizes, named by their px value: `text-13`. Size only; line height and
+     tracking stay with each use. The list is mirrored in lib/utils/cn.ts for tailwind-merge. */
+  --text-11: 11px;
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-17: 17px;
+  --text-20: 20px;
+  --text-22: 22px;
+  --text-24: 24px;
+  --text-26: 26px;
+  --text-28: 28px;
+  --text-32: 32px;
+  --text-40: 40px;
+
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
@@ -193,6 +219,7 @@
   --color-surface-sunken: var(--surface-sunken);
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-hairline: var(--hairline);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-fg-subtle: var(--fg-subtle);
@@ -358,3 +385,25 @@
   }
 }
 
+
+/* The app sidebar's width, readable anywhere (fixed toasts centre past it), right from first paint. */
+:root:has([data-app-sidebar]) {
+  --sidebar-w: 15rem;
+}
+:root[data-sidebar="collapsed"]:has([data-app-sidebar]) {
+  --sidebar-w: 3.5rem;
+}
+
+/*
+ * Browser autofill paints filled fields light blue (yellow in some browsers). Keep each field's own
+ * background and text colour: the long transition holds the autofill colours off indefinitely. No
+ * inset-shadow trick, so focus rings and the table cells' inset focus line still work.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  transition:
+    background-color 600000s 0s,
+    color 600000s 0s;
+}

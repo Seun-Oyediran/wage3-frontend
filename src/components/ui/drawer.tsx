@@ -4,7 +4,8 @@ import { Dialog as D } from "radix-ui";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 
-import { cn } from "@/lib/cn";
+import { cn } from "@/lib/utils/cn";
+import { EASE_DRAWER } from "@/lib/motion";
 
 import { CloseIcon } from "./icons";
 
@@ -47,7 +48,7 @@ export function Drawer({
     roRef.current.observe(el);
     if (el.firstElementChild) roRef.current.observe(el.firstElementChild);
   }, []);
-  const HAIRLINE = "border-[oklch(0_0_0/0.08)] transition-colors duration-150";
+  const HAIRLINE = "border-hairline transition-colors duration-150";
 
   return (
     <D.Root open={open} onOpenChange={onOpenChange}>
@@ -69,12 +70,12 @@ export function Drawer({
                   className,
                 )}
                 initial={{ transform: "translateX(100%)" }}
-                animate={{ transform: "translateX(0%)", transition: { duration: 0.32, ease: [0.32, 0.72, 0, 1] } }}
-                exit={{ transform: "translateX(100%)", transition: { duration: 0.22, ease: [0.32, 0.72, 0, 1] } }}
+                animate={{ transform: "translateX(0%)", transition: { duration: 0.32, ease: EASE_DRAWER } }}
+                exit={{ transform: "translateX(100%)", transition: { duration: 0.22, ease: EASE_DRAWER } }}
               >
                 <div className={cn("flex items-start justify-between gap-4 border-b px-6 pt-6 pb-4", HAIRLINE, !edges.top && "border-transparent")}>
                   <div className="min-w-0 flex-1">
-                    <D.Title className="headline text-[20px] leading-7 font-normal text-balance">{title}</D.Title>
+                    <D.Title className="headline text-20 leading-7 font-normal text-balance">{title}</D.Title>
                     {description ? (
                       <D.Description className="mt-1 text-sm text-fg-muted text-pretty">{description}</D.Description>
                     ) : (

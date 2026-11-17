@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 
 /**
  * Small per-browser store for things the API doesn't hold yet (list logos, company details).
@@ -46,28 +46,30 @@ export function useLocalValue(key: string) {
 export const useListLogo = (listId: string) => useLocalValue(`wage3.list-logo.${listId}`);
 
 export type Company = { logo: string | null; name: string; email: string };
-export function useCompany() {
-  const [raw, setRaw] = useLocalValue("wage3.company");
-  let company: Company = { logo: null, name: "", email: "" };
+
+const COMPANY_KEY = "wage3.company";
+const NO_COMPANY: Company = { logo: null, name: "", email: "" };
+
+/** The stored company with every field filled in; a missing or corrupt value reads as empty. */
+function parseCompany(raw: string | null): Company {
+  if (!raw) return NO_COMPANY;
   try {
-    if (raw) company = { ...company, ...(JSON.parse(raw) as Partial<Company>) };
+    return { ...NO_COMPANY, ...(JSON.parse(raw) as Partial<Company>) };
   } catch {
-    // Ignore a corrupt value.
+    return NO_COMPANY;
   }
-  const update = useCallback(
-    (patch: Partial<Company>) => setRaw(JSON.stringify({ ...company, ...patch })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [raw, setRaw],
-  );
+}
+
+export function useCompany() {
+  const [raw, setRaw] = useLocalValue(COMPANY_KEY);
+  const company = useMemo(() => parseCompany(raw), [raw]);
+  // Merges into what's stored right now, so two quick edits can't overwrite each other.
+  const update = useCallback((patch: Partial<Company>) => setRaw(JSON.stringify({ ...parseCompany(read(COMPANY_KEY)), ...patch })), [setRaw]);
   return [company, update] as const;
 }
 
-/** Reads the company straight from storage, for code outside React (exports). */
+/** Reads the company straight from storage, for code outside React (exports). Null when none is set. */
 export function readCompany(): Company | null {
-  const raw = typeof window === "undefined" ? null : read("wage3.company");
-  try {
-    return raw ? (JSON.parse(raw) as Company) : null;
-  } catch {
-    return null;
-  }
+  const raw = typeof window === "undefined" ? null : read(COMPANY_KEY);
+  return raw ? parseCompany(raw) : null;
 }
