@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Temporary: the landing page isn't ready, so send visitors straight to the app.
+  async redirects() {
+    return [{ source: "/", destination: "/dashboard", permanent: false }];
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` }];
   },
