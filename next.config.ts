@@ -14,6 +14,19 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Emails load these fonts from other origins (webmail, mail apps), and browsers block
+  // cross-origin font loads unless the response carries a CORS header.
+  async headers() {
+    return [
+      {
+        source: "/fonts/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` }];
   },
